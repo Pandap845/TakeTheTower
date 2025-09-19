@@ -1,0 +1,8 @@
+# Archivos de Eclipse
+.cproject
+.project
+.settings/
+
+# Carpeta de compilación
+Debug/
+
