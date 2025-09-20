@@ -318,7 +318,7 @@ Point2D* obtainPoint2D(Point3D* p, enum AXIS axis)
 void menuTower(void)
 {
 	int menu = 0;
-	enum AXIS axis = 0;
+	int axis = 0;
 	int plano = 0;
 	char c = '0';
 	int turn = 0; // 0 => jugador 1 \\ 1 => jugador 2
@@ -336,7 +336,6 @@ void menuTower(void)
 	case 1:
 		while(1) //Bucle infinito, en señal que se estará iterando todo el tiempo
 		{
-
 			do
 			{
 			int playerid = (turn == 0) ? 1 : 2;
@@ -351,39 +350,45 @@ void menuTower(void)
 			printf("\n Plano: %d\n", plano );
 
 			displayStructure(plano, axis);
-			printf("\n\n");
 
 			//	clearBuffer(); //método para limpiar el buffer
-			printf("\n\nAcciones: Pulse las teclas para realizar: \nArriba. Cambiar eje arriba \nAbajo. Cambiar eje abajo \nIzquierda: mover plano izquierdo \n Derecha. Mover plano derecho");
-			printf("\nEnter.Jugar Jugador %c\n q.Salir\n", playerid);
+			printf("\nPulse las teclas para realizar:"
+					"\nArriba:    Cambiar eje arriba"
+					"\nAbajo:     Cambiar eje abajo"
+					"\nIzquierda: Mover plano izquierdo"
+					"\nDerecha:   Mover plano derecho"
+					"\nEnter:     Jugar Jugador %d"
+					"\nq:         Salir\n", playerid);
+			printf("%d %d",plano,axis);
 			c = readKeyboard();
 
 			switch (c)
 			{
 			case 'u': //arriba
-
-					if(axis+1 > 2) axis = 0;
-					else ++axis;
+				if(axis+1 > 2) axis = 0;
+				else axis++;
 
 				break;
 
 			case 'd':
-					if(axis-1 < 0) axis = 2;
-					else --axis;
+				if(axis-1 < 0) axis = 2;
+				else axis--;
+
 				break;
 
 			case 'l':
-					if( plano - 1 < 0) plano = 3;
-					else plano--;
+				if(plano-1 < 0) plano = 3;
+				else plano--;
+
 				break;
 
 			case 'r':
-					if(plano + 1 > 3) plano = 0;
-					else plano++;
+				if(plano + 1 > 3) plano = 0;
+				else plano++;
+
 				break;
 
 			case 'e': //Jugar
-				system("cls");
 				Point3D *p = initPoint3D();
 				if (playerid == 1)
 					playerTurn(player1,p);
@@ -702,13 +707,13 @@ void playerTurn(Player *player, Point3D *p) //Función que permite a determinado
 			{
 				printf("\nYa hay una canica en ese espacio, intenta de nuevo.\n");
 				validTurn = 0;
-			}
+			} else
+				tower->board3D[p->x][p->y][p->z] = player->id;
 		}
 		//else
 			//Ticket();
 			//player->ticket -= 1;
 
-		tower->board3D[p->x][p->y][p->z] = player->id;
 	} while (validTurn == 0);
 
 	player->marble -= 1;
