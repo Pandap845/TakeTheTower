@@ -85,7 +85,7 @@ Tower* tower;
 
 
 void PlayerTurn( Player* player, Point3D *p); //Función que permite a determinado jugador realizar su turno
-void Ticket( Player* player, enum TURN turn); //Función que permite al usuario cambiar de plano
+int useTicket( Player* player, enum TURN turn); //Función que permite al usuario cambiar de plano
 int verifyWin(Player* player, Point3D *p); //Función que checa si ganó el jugador en su turno.
 int verifyPlane(Plane* plane, Point2D* p);
 void checkAllTower(void); //Función que checa todos los planos para validar antes de realizar el giro
@@ -119,7 +119,14 @@ char readKeyboard(void);
 void clearBuffer(void);
 void enterKey(void);
 
-/* Lista de caras (cada cara tiene 4 puntos en 2D: x,y) */
+//Funciones de limpieza
+void freeTower(Tower* t);
+void freePlane(Plane* P);
+
+
+//Funciones matematicas
+
+
 
 
 
@@ -136,6 +143,7 @@ int main(void) {
 
 
 	dummyData();
+
 	menuTower();
 	free(tower); //liberar memoria
 }
@@ -243,7 +251,6 @@ Plane* obtainPlane(int number, enum AXIS axis)
 
 
 	Plane* plane =  initPlane();
-
 	//Se pasan dos argumentos.
 	//El numero del plano cuando el eje Axis es fijo. De esa forma se diferencian
 	//Entonces:
@@ -346,16 +353,13 @@ void menuTower(void)
 			printf("\n\nAcciones: Pulse las teclas para realizar: \nArriba. Cambiar eje arriba \nAbajo. Cambiar eje abajo \nIzquierda: mover plano izquierdo \n Derecha. Mover plano derecho");
 			printf("\nEnter.Jugar Jugador %c\n q.Salir\n", (turn == 0)?'1':'2');
 			c = readKeyboard();
-
 			switch (c)
 			{
 			case 'u': //arriba
 
 					if(axis+1 > 2) axis = 0;
 					else ++axis;
-
 				break;
-
 			case 'd':
 					if(axis-1 < 0) axis = 2;
 					else --axis;
@@ -400,11 +404,11 @@ void menuTower(void)
 
 		break;
 
-
 	case 0:
 		printf("Hasta luego. Pulse Enter para salir\n");
 		enterKey();
 		system("cls");
+		break;
 
 
 	case 2:
@@ -441,12 +445,7 @@ void displayStructure(int num,  enum AXIS axis)
 	case Z:
 		displayZ(num);
 		break;
-
-
-
-
 	}
-
 }
 
 
@@ -466,6 +465,7 @@ void displayZ(int num)
         {
             printChar('*');
             printf(" ");
+
         }
     	printf("\n");
 
@@ -516,12 +516,10 @@ void displayY(int num)
 
     Plane* plane = obtainPlane(num, Y);
 
-
     // 2. Mostrarlo en formato "horizontal"
 
     	//Fila de cobertura de asteriscos
     printf("      ");
-
     for(int i=0; i < COLUMNS; ++i)
     {
     	printChar('*');
@@ -530,16 +528,13 @@ void displayY(int num)
     printf("\n");
 
 
-
     for(int i=0; i < ROWS; ++i)
     {
-
     	//Imprimir espacios
     	for(int s= i; ROWS-s > 0; ++s )
     	{
     		printf(" ");
     	}
-
 
     	printChar('*');
     	printf(" ");
@@ -548,14 +543,11 @@ void displayY(int num)
     		//Imprimir la información
     		printChar(plane->board2D[i][j]);
     		printf(" ");
-
     	}
     	printChar('*');
     	printf("\n");
 
-
     }
-
     printf("   ");
     //Asteriscos finales
     for(int i=0; i < COLUMNS; ++i)
@@ -563,7 +555,6 @@ void displayY(int num)
     	printChar('*');
     	printf(" ");
     }
-
 
     free(plane);
 
@@ -671,8 +662,22 @@ void PlayerTurn(Player* player, Point3D *p) //Función que permite a determinado
 
 }
 
-void Ticket( Player* player,  enum TURN turn)
+
+int useTicket( Player* player,  enum TURN turn)
 {
+
+	if(player->ticket == 0) //Si ya no tiene tiradas
+		return -1; //Regresar un error
+
+
+	//Solución ingenua
+	//Realizar una copia de la torre
+	Tower* copy = copyTower(tower);
+
+
+
+
+	return 0;
 	//Función que permite al usuario cambiar de plano
 }
 
@@ -737,7 +742,6 @@ int verifyPlane(Plane* plane, Point2D* p2d)
 			if(result!=0) return result; //Ya se habrá identificado un ganador
 
 
-
 		return result; //Al final de todo se retorna lo obtenido
 }
 
@@ -749,40 +753,28 @@ int VerifyWin(Player* player, Point3D *p)
 	Point2D* p2d;
 	int result=0;
 
-
 	for(int i=0; i < 3; i++)
 	{
 		switch(i)
 		{
-
 		case X:
 			plane = obtainPlane(p->x, X);
 			p2d = obtainPoint2D(p, X);
 			break;
-
 		case Y:
 			plane = obtainPlane(p->y, Y);
 			p2d = obtainPoint2D(p, Y);
 			break;
-
 		case Z:
 			plane = obtainPlane(p->z, Z);
 			p2d = obtainPoint2D(p, Z);
 			break;
-
 		}
-
-
 		//proceso de validación
 		result = verifyPlane(plane, p2d);
-
-
-
-
 		//Estar liberando la memoria del plano
 		free(plane);
 		if(result!=0) return result;
-
 
 	}
 	return result;
@@ -856,4 +848,41 @@ void enterKey(void)
 	getchar();
 
 }
+
+
+
+//funciones de limpieza
+
+//Función que limpia la memoria de la torre
+void freeTower(Tower* t)
+{
+
+	for(int i=0; i < FLOORS; ++i)
+	{
+		for(int j=0; j < ROWS; ++j)
+		{
+			free(t->board3D[i][j]); //libera la matriz
+		}
+		free(t->board3D[i]); //Libera la capa
+	}
+	free(t->board3D);
+	free(t);
+}
+
+
+//Función que libera la memoria del plano
+void freePlane(Plane* p)
+{
+
+	for(int i=0; i < ROWS; ++i)
+	{
+		free(p->board2D[i]);
+	}
+	free(p->board2D);
+	free(p);
+
+
+}
+
+
 
