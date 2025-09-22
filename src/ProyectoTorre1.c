@@ -114,17 +114,16 @@ void displayStructure(int n,int axis);
 void displayZ(int n);
 void displayY(int n);
 void displayX(int n);
-void displayD(int n); //Solo dos planos lol
+//void displayD(int n); //Solo dos planos lol
 void displayCredits(void);
-void selectPlaneToShow();
 void printChar(char c);
 char readKeyboard(void);
 void clearBuffer(void);
 void enterKey(void);
 void reset(void);
 
-/* Lista de caras (cada cara tiene 4 puntos en 2D: x,y) */
-
+void freeTower(Tower* t);
+void freePlane(Plane* p);
 
 
 //-------------------------------------------
@@ -139,7 +138,9 @@ int main(void) {
 
 	menu();
 
-	free(tower); free(player1); free(player2); //Liberar memoria
+	freeTower(tower);
+	free(player1);
+	free(player2); //Liberar memoria
 }
 
 //Funciones de testing
@@ -171,11 +172,32 @@ Plane* initPlane(void)
 {
 	Plane* p;
 	p = (Plane*)malloc(sizeof(Plane));
+
+
+	//Médidas de seguridad
+	if(!p) return NULL;
+
 	p->board2D = (char**)malloc(sizeof(char**)*ROWS);
+
+	if(!(p->board2D))
+	{
+		free(p);
+		return NULL;
+	}
+
 
 	for(int i=0; i< ROWS; ++i)
 	{
 		p->board2D[i] = (char*)malloc(sizeof(char*)*COLUMNS);
+
+		 if (!(p->board2D[i])) {
+		            for (int j = 0; j < i; ++j) {
+		                free(p->board2D[j]);
+		            }
+		            free(p->board2D);
+		            free(p);
+		            return NULL;
+		        }
 		 memset(p->board2D[i], '0', COLUMNS);  //inicializar en 0
 	}
 
@@ -199,6 +221,8 @@ Player* initPlayer(char id)
 	Player *p;
 	p = (Player*)malloc(sizeof(p));
 
+
+	if(!p) return NULL; //Por si no se inicializa
 	p->id = id;
 	p->ticket = 4;
 	p->marble = 32;
@@ -243,6 +267,37 @@ Point2D* initPoint2D(void)
 	return p;
 
 }
+
+
+//Funciones de liberación de memoria
+//Función que limpia la memoria de la torre
+void freeTower(Tower* t)
+{
+
+	for(int i=0; i < FLOORS; ++i)
+	{
+		for(int j=0; j < ROWS; ++j)
+		{
+			free(t->board3D[i][j]); //libera la matriz
+		}
+		free(t->board3D[i]); //Libera la capa
+	}
+	free(t->board3D);
+	free(t);
+}
+
+//Función que libera la memoria del plano
+void freePlane(Plane* p)
+{
+
+	for(int i=0; i < ROWS; ++i)
+	{
+		free(p->board2D[i]);
+	}
+	free(p->board2D);
+	free(p);
+}
+
 
 //--------------------------------
 //Cuerpo de las funciones
@@ -353,7 +408,7 @@ void menu(void)
 			break;
 
 		case 2:
-			//	displayCredits();
+			displayCredits();
 			enterKey();
 			break;
 
@@ -576,7 +631,7 @@ void displayZ(int n)
     }
     printChar('\n');
 
-    free(plane);
+    freePlane(plane);
 }
 
 
@@ -635,7 +690,7 @@ void displayY(int n)
     }
 
 
-    free(plane);
+    freePlane(plane);
 
 }
 
@@ -695,11 +750,11 @@ void displayX(int n)
 	    }
 	    printChar('\n');
 
-	    free(plane);
+	    freePlane(plane);
 
 }
 
-void diplayCredits(void)
+void displayCredits(void)
 {
 	printf("\n(c) 2025. Victor Emiliano Rodriguez Aguila\n");
 	printf("Joshua David DeBono Rios\n");
@@ -846,7 +901,7 @@ void verifyWin(Point3D *p, int *resultado)
 		if (*resultado != 0) return;
 
 		//Estar liberando la memoria del plano
-		free(plane);
+		freePlane(plane);
 		free(p2d);
 	}
 }
@@ -940,8 +995,19 @@ void enterKey(void)
 
 void reset(void)
 {
-	free(tower); free(player1); free(player2);
+	freeTower(tower); free(player1); free(player2);
 	tower = initTower();
+	//Verificar por ubo una inicialización invalida
+
+
 	player1 = initPlayer('1');
 	player2 = initPlayer('2');
 }
+
+
+
+//funciones de limpieza
+
+
+
+
