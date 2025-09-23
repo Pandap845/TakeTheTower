@@ -61,7 +61,9 @@ typedef struct
 enum AXIS{
 	X,
 	Y,
-	Z
+	Z,
+	D1,
+	D2
 };
 
 
@@ -114,6 +116,8 @@ void displayStructure(int n,int axis);
 void displayZ(int n);
 void displayY(int n);
 void displayX(int n);
+void displayD1(void);
+void displayD2(void);
 //void displayD(int n); //Solo dos planos lol
 void displayCredits(void);
 void printChar(char c);
@@ -320,7 +324,13 @@ Plane* obtainPlane(int n, int axis)
 			case Y:
 				x = j; y = n; z = i; break;
 			case Z:
-				x = i; y = j; z = n;
+				x = i; y = j; z = n; break;
+			case D1:
+				x = i; y = i; z = j;
+									 break;
+			case D2:
+				x = i; z = j; y = (COLUMNS - 1) - j;
+								break;
 			}
 			plane->board2D[i][j] = tower->board3D[x][y][z];
 		}
@@ -364,6 +374,9 @@ Point2D* obtainPoint2D(Point3D* p, int axis)
 		p2d->y = p->z;
 
 		break;
+
+	case D1:
+	case D2:
 	case Y: //(x,z)
 		p2d->x = p->x;
 		p2d->y = p->z;
@@ -440,8 +453,13 @@ void menuTower(int *resultado,int *turn, int *menu)
 				printf("X");
 			else if(axis == Y)
 				printf("Y");
-			else
+			else if(axis == Z)
 				printf("Z");
+			else if (axis == D1)
+				printf("Primera diagonal");
+			else
+				printf("Segunda diagonal");
+
 			printf("\n Plano: %d\n", plano+1 );
 				displayStructure(plano, axis);
 
@@ -485,7 +503,7 @@ void updateMenu(char *c, int *axis, int *plano)
 	switch (*c)
 	{
 	case 'u': //arriba
-		if(*axis+1 > 2)
+		if(*axis+1 > 5)
 			*axis = 0;
 		else
 			(*axis)++;
@@ -493,7 +511,7 @@ void updateMenu(char *c, int *axis, int *plano)
 
 	case 'd': //abajo
 		if(*axis-1 < 0)
-			*axis = 2;
+			*axis = 4;
 		else
 			(*axis)--;
 		break;
@@ -571,6 +589,12 @@ void displayStructure(int n,  int axis)
 		break;
 	case Z:
 		displayZ(n);
+		break;
+	case D1:
+		displayD1();
+		break;
+	case D2:
+		displayD2();
 		break;
 	}
 
@@ -665,7 +689,6 @@ void displayY(int n)
     		printf(" ");
     	}
 
-
     	printChar('*');
     	printf(" ");
     	for(int j=0; j < COLUMNS; ++j)
@@ -753,6 +776,71 @@ void displayX(int n)
 	    freePlane(plane);
 
 }
+
+
+
+//Función que muestra la primera diagonal
+void displayD1(void)
+{
+	Plane* p = obtainPlane(0, D1);
+
+	for(int i=0; i < COLUMNS; ++i)
+	{
+		printChar('*');
+		printf(" ");
+	}
+	printf("\n");
+
+
+	for(int i=0; i < ROWS; ++i)
+	{
+		printChar('*');
+		printf(" ");
+		for(int j=0; j < COLUMNS; ++j)
+		{
+			printChar(p->board2D[i][j]);
+			printf(" ");
+		}
+		printChar('*');
+		printf("\n");
+	}
+
+	freePlane(p);
+
+
+}
+
+//Función que muestra la segunda diagonal
+void displayD2(void)
+{
+
+	Plane* p = obtainPlane(0, D2);
+
+
+	for(int i=0; i < COLUMNS; ++i)
+	{
+		printChar('*');
+		printf(" ");
+	}
+	printf("\n");
+
+
+	for(int i=0; i < ROWS; ++i)
+	{
+		printChar('*');
+		printf(" ");
+		for(int j=0; j < COLUMNS; ++j)
+		{
+			printChar(p->board2D[i][j]);
+			printf(" ");
+		}
+		printChar('*');
+		printf("\n");
+	}
+
+	freePlane(p);
+}
+
 
 void displayCredits(void)
 {
@@ -862,15 +950,8 @@ void verifyWin(Point3D *p, int *resultado)
 	Plane* plane;
 	Point2D* p2d;
 
-	/*
-	DIAGONALES 3D
-	000 111 222 333 [i][j][k]
-	030 121 212 303 [i][3-j][k]
-	003 112 221 330 [i][j][3-k]
-	033 122 211 300 [i][3-j][3-k]
-	*/
 
-	for(int i=0; i < 3; i++)
+	for(int i=0; i < 5; i++)
 	{
 		switch(i)
 		{
@@ -888,6 +969,18 @@ void verifyWin(Point3D *p, int *resultado)
 			plane = obtainPlane(p->z, Z);
 			p2d = obtainPoint2D(p, Z);
 			break;
+
+		case D1:
+			  if (p->x != p->y) continue; // no pertenece al plano
+			plane = obtainPlane(0, D1);
+			p2d = obtainPoint2D(p, D1);
+			break;
+		case D2:
+			  if (p->x + p->z != 3) continue; // no pertenece a la diagonal
+			plane = obtainPlane(0, D2);
+			p2d = obtainPoint2D(p, D2);
+			break;
+
 		}
 
 		//proceso de validación
