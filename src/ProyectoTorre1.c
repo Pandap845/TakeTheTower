@@ -999,15 +999,8 @@ void reset(void)
 	tower = initTower();
 	//Verificar por ubo una inicialización invalida
 
-
 	player1 = initPlayer('1');
 	player2 = initPlayer('2');
 }
 
-
-
 //funciones de limpieza
-
-
-
-
