@@ -322,7 +322,7 @@ Plane* obtainPlane(int n, int axis)
 			case X:
 				x = n; y = j; z = i; break;
 			case Y:
-				x = j; y = n; z = i; break;
+				x = i; y = n; z = j; break;
 			case Z:
 				x = i; y = j; z = n; break;
 			case D1:
@@ -784,7 +784,7 @@ void displayD1(void)
 {
 	Plane* p = obtainPlane(0, D1);
 
-	for(int i=0; i < COLUMNS; ++i)
+	for(int i=0; i < COLUMNS+2; ++i)
 	{
 		printChar('*');
 		printf(" ");
@@ -804,6 +804,15 @@ void displayD1(void)
 		printChar('*');
 		printf("\n");
 	}
+
+	for(int i=0; i < COLUMNS+2; ++i)
+		{
+			printChar('*');
+			printf(" ");
+		}
+		printf("\n");
+
+
 
 	freePlane(p);
 
@@ -817,7 +826,7 @@ void displayD2(void)
 	Plane* p = obtainPlane(0, D2);
 
 
-	for(int i=0; i < COLUMNS; ++i)
+	for(int i=0; i < COLUMNS+2; ++i)
 	{
 		printChar('*');
 		printf(" ");
@@ -837,6 +846,15 @@ void displayD2(void)
 		printChar('*');
 		printf("\n");
 	}
+
+	for(int i=0; i < COLUMNS+2; ++i)
+			{
+				printChar('*');
+				printf(" ");
+			}
+			printf("\n");
+
+
 
 	freePlane(p);
 }
@@ -922,9 +940,9 @@ void placeMarble(Point3D *p,int dim)
 	int x,var;
 	do {
 		switch (dim) {
-		case X: printf("Declare la capa en el cual quieres posicionar tu canica (1-4):"); break;
-		case Y: printf("Declare la fila en el cual quieres posicionar tu canica (1-4):"); break;
-		case Z: printf("Declare la columna en el cual quieres posicionar tu canica (1-4):");
+		case Z: printf("Declare la capa en el cual quieres posicionar tu canica (1-4):"); break;
+		case X: printf("Declare la fila en el cual quieres posicionar tu canica (1-4):"); break;
+		case Y: printf("Declare la columna en el cual quieres posicionar tu canica (1-4):");
 		}
 		var = scanf("%d",&x);
 		if (var != 1)
@@ -932,9 +950,9 @@ void placeMarble(Point3D *p,int dim)
 	} while (var != 1 || x < 0 || x > 4);
 
 	switch (dim) {
-	case X: p->x = x-1; break;
-	case Y: p->y = x-1; break;
-	case Z: p->z = x-1;
+	case Z: p->x = x-1; break;
+	case X: p->y = x-1; break;
+	case Y: p->z = x-1;
 	}
 }
 
