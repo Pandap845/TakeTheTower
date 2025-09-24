@@ -318,7 +318,7 @@ void menu(void)
 			break;
 
 		case 2:
-			//	displayCredits();
+			displayCredits();
 			enterKey();
 			break;
 
@@ -396,7 +396,7 @@ void menuTower(int *resultado,int *turn, int *menu)
 		else
 			playerTurn(player2,p,resultado);
 
-		if (player1->marble == 0 || player2->marble == 0)
+		if (player1->marble == 0 && player2->marble == 0)
 			*resultado = 3;
 		if (*resultado != 0)
 			endScreen(resultado,turn,menu);
@@ -777,7 +777,7 @@ void displayD2(void)
 }
 
 
-void diplayCredits(void)
+void displayCredits(void)
 {
 	printf("\n(c) 2025. Victor Emiliano Rodriguez Aguila\n");
 	printf("      &\n         Joshua David DeBono Rios\n");
