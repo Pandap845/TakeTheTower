@@ -1196,3 +1196,36 @@ Plane* turn90Right(Plane* p)
 
     return ptr;
 }
+
+
+
+//Funciones de liberación de memoria
+//Función que limpia la memoria de la torre
+void freeTower(Tower* t)
+{
+
+	for(int i=0; i < FLOORS; ++i)
+	{
+		for(int j=0; j < ROWS; ++j)
+		{
+			free(t->board3D[i][j]); //libera la matriz
+		}
+		free(t->board3D[i]); //Libera la capa
+	}
+	free(t->board3D);
+	free(t);
+}
+
+//Función que libera la memoria del plano
+void freePlane(Plane* p)
+{
+
+	for(int i=0; i < ROWS; ++i)
+	{
+		free(p->board2D[i]);
+	}
+	free(p->board2D);
+	free(p);
+}
+
+
