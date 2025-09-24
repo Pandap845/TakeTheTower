@@ -71,8 +71,7 @@ enum TURN {
 	RIGHT
 };
 
-
-//Variables globalbes
+//Variables globales
 Tower* tower;
 Player* player1;
 Player* player2;
@@ -80,15 +79,14 @@ Player* player2;
 
 //Funciones de juego
 void playerTurn(Player* player, Point3D *p,int *resultado); //Función que permite a determinado jugador realizar su turno
-int ticket( Player* player); //Función que permite al usuario cambiar de plano
+void ticket( Player* player,int *resultado); //Función que permite al usuario cambiar de plano
 void placeMarble(Point3D *p, int dim); //Da ingreso de colocación de canica
 void verifyWin(Point3D *p, int *resultado); //Función que checa si ganó el jugador en su turno.
 void verifyPlane(Plane* plane, int *resultado, int line, int n);
-int checkAllTower(Tower* t); //Función que checa todos los planos para validar antes de realizar el giro
+void checkAllTower(Tower* t,int *resultado); //Función que checa todos los planos para validar antes de realizar el giro
 Tower* copyTower(Tower* tower); //Función que genera una copia temporal de la torre antes de realizar el cambio
 Plane* obtainPlane(int n, int axis);
 Point2D* obtainPoint2D(Point3D* p, int axis);
-
 
 //funciones incializadoras
 Tower* initTower(void);
@@ -108,27 +106,23 @@ void displayStructure(int n,int axis); //Función para imprimir el plano y eje
 void displayZ(int n); //Función para imprimir el eje Z
 void displayY(int n); //Función para imprimir el eje Y
 void displayX(int n); //Función para imprimir el eje X
- //Función para imprimir los planos diagonales (3D)
-void displayD1(void);
-void displayD2(void);
+void displayD1(void); //Función para imprimir diagonal 3D
+void displayD2(void); //Función para imprimir antidiagonal 3D
+void displayCredits(void); //Desplegar créditos
 
-void displayCredits(void);
-
-void printChar(char c);
-char readKeyboard(void);
+void printChar(char c); //Impresión de carácteres con colores
+char readKeyboard(void); //Lectura de teclas para el menu de la torre
 void clearBuffer(void);
 void enterKey(void);
-void reset(void);
 
+//Funciones para limpieza de memoria
 void freeTower(Tower* t);
 void freePlane(Plane* p);
-
+void reset(void);
 
 //Funciones de giro
-
 Plane* turn90Left(Plane* p);
 Plane* turn90Right(Plane* p);
-
 
 //-------------------------------------------
 
@@ -144,8 +138,6 @@ int main(void) {
 	free(tower); free(player1); free(player2); //Liberar memoria
 }
 
-
-
 //Funciones inicializadoras
 
 Plane* initPlane(void)
@@ -159,7 +151,6 @@ Plane* initPlane(void)
 		p->board2D[i] = (char*)malloc(sizeof(char*)*COLUMNS);
 		 memset(p->board2D[i], '0', COLUMNS);  //inicializar en 0
 	}
-
 
 	return p;
 }
@@ -289,7 +280,56 @@ Point2D* obtainPoint2D(Point3D* p, int axis)
 	return p2d;
 }
 
+//Crea una copia segura de la torre para hacer validación que el giro es permisible
+Tower* copyTower(Tower* tower)
+{
+	Tower* t = initTower();
 
+	for(int x=0; x < 4; x++)
+	{
+		for(int y=0; y < 4; y++)
+		{
+			for(int z = 0; z < 4; z++)
+			{
+				t->board3D[x][y][z] = tower->board3D[x][y][z];
+			}
+		}
+	}
+	return t;
+	//Función que genera una copia temporal de la torre antes de realizar el cambio
+}
+
+//Función de giro
+Plane* turn90Left(Plane* p)
+{
+
+    Plane* ptr = initPlane();
+
+
+    if(!ptr) return NULL;
+    for(int i=0; i < ROWS; ++i)
+        for(int j=0; j < COLUMNS; ++j)
+            ptr->board2D[COLUMNS-j-1][i] = p->board2D[i][j]; //Se realiza el intercambio
+    //Si todo sale bien
+
+    return ptr; //Se regresa un 0, en señal de que salio bie
+}
+
+Plane* turn90Right(Plane* p)
+{
+
+	Plane* ptr = initPlane();
+     if(!ptr) return NULL;
+
+    //Hacer la rotacióm
+    for(int i=0; i < ROWS; ++i)
+        for(int j=0; j < COLUMNS; ++j)
+                ptr->board2D[j][ROWS-i-1] = p->board2D[i][j];
+
+    return ptr;
+}
+
+//Empiezo de GUI
 void menu(void)
 {
 	int var,menu;
@@ -372,7 +412,7 @@ void menuTower(int *resultado,int *turn, int *menu)
 					"\nIzquierda: Mover plano izquierdo"
 					"\nDerecha:   Mover plano derecho"
 					"\ne:         Pasar turno (Jugador %d)"
-					"\nq:         Salir\n%d",playerid,*resultado);
+					"\nq:         Salir\n",playerid);
 			c = readKeyboard();
 
 			updateMenu(&c,&axis,&plano);
@@ -385,8 +425,6 @@ void menuTower(int *resultado,int *turn, int *menu)
 	if (c == 'q')
 		//Dar diálogo de salida para asegurar que se termine el juego a propósito
 		quitDialog(resultado);
-
-
 	else if (c == 'e')
 	{
 		//Jugar
@@ -454,11 +492,11 @@ void quitDialog(int *resultado)
 	} while (var != 1 && input != 1 && input != 2);
 
 	if (input == 1)
-		{*resultado = 3;
+	{
+		*resultado = 3;
 
-			freeTower(tower);
-			tower = initTower();
-		}
+		reset();
+	}
 }
 
 void endScreen(int *resultado,int *turn,int *menu)
@@ -807,6 +845,7 @@ void printChar(char c)
     }
 }
 
+//Inicializar formalmente el turno del jugador
 void playerTurn(Player *player, Point3D *p,int *resultado) //Función que permite a determinado jugador realizar su turno
 {
 	int x,var,validTurn;
@@ -847,15 +886,14 @@ void playerTurn(Player *player, Point3D *p,int *resultado) //Función que permit
 		}
 		else
 		{
-			if(!ticket(player)) continue;
+			ticket(player,resultado);
+			if(!(*resultado)) continue;
 			player->ticket -= 1;
-
-
 		}
-
 	} while (validTurn == 0);
 }
 
+//Solicitar posición en donde el jugador quiera poner su canica
 void placeMarble(Point3D *p,int dim)
 {
 	int x,var;
@@ -877,8 +915,8 @@ void placeMarble(Point3D *p,int dim)
 	}
 }
 
-
-int ticket(Player* player)
+//Solicitar información del giro y validarlo
+void ticket(Player* player,int *resultado)
 {
     int index, direction, var;
 
@@ -919,9 +957,9 @@ int ticket(Player* player)
             tower->board3D[i][j][index - 1] = rotated->board2D[i][j];
 
     // Verificar si alguien ganó tras el giro
-    int valid = checkAllTower(tower);
+    checkAllTower(tower,resultado);
 
-    if (valid) {
+    if (!(*resultado)) {
         printf("\nEl plano fue girado con exito!\n");
     } else {
         printf("\nMovimiento invalido: alguien ganaria con este giro. Revirtiendo...\n");
@@ -940,10 +978,15 @@ int ticket(Player* player)
     freePlane(plane);
     freePlane(rotated);
     freeTower(backup);
-
-    return valid;
 }
 
+/*
+ * PRIMERA Y PRINCIPAL FUNCIÓN DE LÓGICA
+ * Toma las coordenadas de la canica puesta/que se quiere validar,
+ * organiza la verificación en los planos que intersecta ese punto
+ * y se hace la validación de que si forma una linea de 4 en lo horizontal,
+ * vertical o diagonal.
+ */
 
 void verifyWin(Point3D *p, int *resultado)
 {
@@ -982,8 +1025,6 @@ void verifyWin(Point3D *p, int *resultado)
 			plane = obtainPlane(0, D2);
 			p2d = obtainPoint2D(p, D2);
 			break;
-
-
 		}
 
 		//proceso de validación
@@ -1002,7 +1043,7 @@ void verifyWin(Point3D *p, int *resultado)
 	}
 }
 
-//Función que verifica si ALGUIEN ganó
+//Función que verifica dentro del plano dado
 void verifyPlane(Plane* plane, int *resultado,int line, int n)
 {
 	int p1=0, p2=0;
@@ -1024,98 +1065,26 @@ void verifyPlane(Plane* plane, int *resultado,int line, int n)
 
 
 //Esta función no debería siquiera existir. Pero permite verificar TODA la torre para ver si hay algún movimiento invalido al girar la torre
-int checkAllTower(Tower* t)
+void checkAllTower(Tower* t,int *resultado)
 {
     Plane* plane;
-    int resultado = 0;
 
-    // Revisar todos los planos en todos los ejes
-    for (int n = 0; n < 4; n++) {
-        // Eje X
-        plane = obtainPlane(n, X);
-        for (int i = 0; i < 4 && resultado == 0; i++) {
-            verifyPlane(plane, &resultado, 0, i);
-            if(resultado!=0) return 0;
+    /*
+     * p3d->z = plano;
+     *
+     *
+     * for i < 4
+     * 	for j < 4
+     * 		p3d->x = i; p3d->y = j;
+     * 		verifyWin(...)
+     *
+     *
+     */
 
-            verifyPlane(plane, &resultado, 1, i);
-            if(resultado!=0) return 0;
-        }
-        verifyPlane(plane, &resultado, 2, 0);
-        if(resultado!=0) return 0;
-        verifyPlane(plane, &resultado, 3, 0);
-        if(resultado!=0) return 0;
-        freePlane(plane);
-
-        // Eje Y
-        plane = obtainPlane(n, Y);
-        for (int i = 0; i < 4 && resultado == 0; i++) {
-            verifyPlane(plane, &resultado, 0, i);
-            if(resultado!=0) return 0;
-            verifyPlane(plane, &resultado, 1, i);
-            if(resultado!=0) return 0;
-        }
-        verifyPlane(plane, &resultado, 2, 0);
-        if(resultado!=0) return 0;
-        verifyPlane(plane, &resultado, 3, 0);
-        if(resultado!=0) return 0;
-        freePlane(plane);
-
-        // Eje Z
-        plane = obtainPlane(n, Z);
-        for (int i = 0; i < 4 && resultado == 0; i++) {
-            verifyPlane(plane, &resultado, 0, i);
-            if(resultado!=0) return 0;
-            verifyPlane(plane, &resultado, 1, i);
-            if(resultado!=0) return 0;
-        }
-        verifyPlane(plane, &resultado, 2, 0);
-        if(resultado!=0) return 0;
-        verifyPlane(plane, &resultado, 3, 0);
-        if(resultado!=0) return 0;
-        freePlane(plane);
-    }
-
-    // Revisar diagonales principales
-    plane = obtainPlane(0, D1);
-    verifyPlane(plane, &resultado, 2, 0);
-    if(resultado!=0) return 0;
-    verifyPlane(plane, &resultado, 3, 0);
-    if(resultado!=0) return 0;
-    freePlane(plane);
-
-    plane = obtainPlane(0, D2);
-    verifyPlane(plane, &resultado, 2, 0);
-    if(resultado!=0) return 0;
-    verifyPlane(plane, &resultado, 3, 0);
-    freePlane(plane);
-
-    return (resultado == 0); // 1 si es válido, 0 si alguien ganó
 }
-
-
-
-Tower* copyTower(Tower* tower)
-{
-	Tower* t = initTower();
-
-	for(int x=0; x < 4; x++)
-	{
-		for(int y=0; y < 4; y++)
-		{
-			for(int z = 0; z < 4; z++)
-			{
-				t->board3D[x][y][z] = tower->board3D[x][y][z];
-			}
-		}
-	}
-	return t;
-	//Función que genera una copia temporal de la torre antes de realizar el cambio
-}
-
 
 //-------------------------
-//FUnciones auxiliares
-
+//Fúnciones auxiliares
 
 char readKeyboard(void)
 {
@@ -1154,51 +1123,6 @@ void enterKey(void)
 	getchar();
 }
 
-void reset(void)
-{
-	free(tower); free(player1); free(player2);
-	tower = initTower();
-	//Verificar por ubo una inicialización invalida
-
-
-	player1 = initPlayer('1');
-	player2 = initPlayer('2');
-}
-
-
-//Función de giro
-
-Plane* turn90Left(Plane* p)
-{
-
-    Plane* ptr = initPlane();
-
-
-    if(!ptr) return NULL;
-    for(int i=0; i < ROWS; ++i)
-        for(int j=0; j < COLUMNS; ++j)
-            ptr->board2D[COLUMNS-j-1][i] = p->board2D[i][j]; //Se realiza el intercambio
-    //Si todo sale bien
-
-    return ptr; //Se regresa un 0, en señal de que salio bie
-}
-
-Plane* turn90Right(Plane* p)
-{
-
-	Plane* ptr = initPlane();
-     if(!ptr) return NULL;
-
-    //Hacer la rotacióm
-    for(int i=0; i < ROWS; ++i)
-        for(int j=0; j < COLUMNS; ++j)
-                ptr->board2D[j][ROWS-i-1] = p->board2D[i][j];
-
-    return ptr;
-}
-
-
-
 //Funciones de liberación de memoria
 //Función que limpia la memoria de la torre
 void freeTower(Tower* t)
@@ -1228,4 +1152,13 @@ void freePlane(Plane* p)
 	free(p);
 }
 
+//Limpia la torre y los datos de cada jugador y los vuelve a inicializar para el próximo juego
+void reset(void)
+{
+	freeTower(tower); free(player1); free(player2);
+	tower = initTower();
+	//Verificar por ubo una inicialización invalida
 
+	player1 = initPlayer('1');
+	player2 = initPlayer('2');
+}
