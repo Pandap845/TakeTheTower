@@ -48,6 +48,7 @@ typedef struct
 } Point3D;
 
 
+
 typedef struct
 {
 	int x;
@@ -55,13 +56,12 @@ typedef struct
 } Point2D;
 
 
-
-
-
 enum AXIS{
 	X,
 	Y,
-	Z
+	Z,
+	D1,
+	D2
 };
 
 
@@ -72,29 +72,23 @@ enum TURN {
 };
 
 
-
-
-
-
-
-
 //Variables globalbes
 Tower* tower;
 Player* player1;
 Player* player2;
-
 //Prototipos de las funciones
 
 //Funciones de juego
 void playerTurn(Player* player, Point3D *p,int *resultado); //Función que permite a determinado jugador realizar su turno
-void ticket( Player* player, int turn); //Función que permite al usuario cambiar de plano
+int ticket( Player* player); //Función que permite al usuario cambiar de plano
 void placeMarble(Point3D *p, int dim); //Da ingreso de colocación de canica
 void verifyWin(Point3D *p, int *resultado); //Función que checa si ganó el jugador en su turno.
 void verifyPlane(Plane* plane, int *resultado, int line, int n);
-void checkAllTower(void); //Función que checa todos los planos para validar antes de realizar el giro
+int checkAllTower(Tower* t); //Función que checa todos los planos para validar antes de realizar el giro
 Tower* copyTower(Tower* tower); //Función que genera una copia temporal de la torre antes de realizar el cambio
 Plane* obtainPlane(int n, int axis);
 Point2D* obtainPoint2D(Point3D* p, int axis);
+
 
 //funciones incializadoras
 Tower* initTower(void);
@@ -114,7 +108,10 @@ void displayStructure(int n,int axis); //Función para imprimir el plano y eje
 void displayZ(int n); //Función para imprimir el eje Z
 void displayY(int n); //Función para imprimir el eje Y
 void displayX(int n); //Función para imprimir el eje X
-void displayD(int n); //Función para imprimir los planos diagonales (3D)
+ //Función para imprimir los planos diagonales (3D)
+void displayD1(void);
+void displayD2(void);
+
 void displayCredits(void);
 void selectPlaneToShow();
 void printChar(char c);
@@ -123,12 +120,17 @@ void clearBuffer(void);
 void enterKey(void);
 void reset(void);
 
-/* Lista de caras (cada cara tiene 4 puntos en 2D: x,y) */
+void freeTower(Tower* t);
+void freePlane(Plane* p);
 
+
+//Funciones de giro
+
+Plane* turn90Left(Plane* p);
+Plane* turn90Right(Plane* p);
 
 
 //-------------------------------------------
-void dummyData(void); //Función para testear llenando la torre de canicas
 
 int main(void) {
 
@@ -140,27 +142,6 @@ int main(void) {
 	menu();
 
 	free(tower); free(player1); free(player2); //Liberar memoria
-}
-
-//Funciones de testing
-
-void dummyData(void)
-{
-	int z=0;
-	int x=0;
-	int y=0;
-
-	 for (z = 0; z < 4; z++) {
-	        char value;
-	        if (z % 3 == 0) value = '0';
-	        else if (z % 3 == 1) value = '1';
-	        else value = '2';
-	        for (x = 0; x <4 ; x++) {
-	            for (y = 0; y < 4; y++) {
-	                tower->board3D[x][y][z] = value;
-	            }
-	        }
-	    }
 }
 
 
@@ -197,7 +178,7 @@ void clearPlane(Plane* plane)
 Player* initPlayer(char id)
 {
 	Player *p;
-	p = (Player*)malloc(sizeof(p));
+	p = (Player*)malloc(sizeof(Player));
 
 	p->id = id;
 	p->ticket = 0;
@@ -211,16 +192,14 @@ Tower* initTower(void)
 	Tower *t;
 	t = (Tower*)malloc(sizeof(Tower));
 
-	t->board3D  = (char***)malloc(sizeof(char***)*FLOORS);
-	memset(t->board3D, '0', sizeof(FLOORS));
+	t->board3D  = (char***)malloc(sizeof(char**)*FLOORS);
 
 	for(int i=0; i < FLOORS; ++i)
 	{
-		t->board3D[i] = (char**)malloc(sizeof(char**)*ROWS);
-		memset(t->board3D[i], '0', sizeof(ROWS));
+		t->board3D[i] = (char**)malloc(sizeof(char*)*ROWS);
 		for(int j=0; j < ROWS; ++j)
 		{
-			t->board3D[i][j] = (char*)malloc(sizeof(char*)*COLUMNS);
+			t->board3D[i][j] = (char*)malloc(sizeof(char)*COLUMNS);
 			memset(t->board3D[i][j], '0', sizeof(COLUMNS));
 		}
 	}
@@ -265,12 +244,17 @@ Plane* obtainPlane(int n, int axis)
 			case Y:
 				x = j; y = n; z = i; break;
 			case Z:
-				x = i; y = j; z = n;
+				x = i; y = j; z = n; break;
+			case D1:
+				x = i; y = i; z = j;
+									 break;
+			case D2:
+				x = i; z = j; y = (COLUMNS - 1) - j;
+								break;
 			}
 			plane->board2D[i][j] = tower->board3D[x][y][z];
 		}
 	}
-
 	return plane;
 }
 
@@ -287,6 +271,9 @@ Point2D* obtainPoint2D(Point3D* p, int axis)
 		p2d->y = p->z;
 
 		break;
+
+	case D1:
+	case D2:
 	case Y: //(x,z)
 		p2d->x = p->x;
 		p2d->y = p->z;
@@ -363,9 +350,19 @@ void menuTower(int *resultado,int *turn, int *menu)
 				printf("X");
 			else if(axis == Y)
 				printf("Y");
-			else
+			else if(axis == Z)
 				printf("Z");
+			else if (axis == D1)
+				printf("Primera diagonal");
+			else
+				printf("Segunda diagonal");
+
+
+			if(axis != D1 && axis != D2)
 			printf("\n Plano: %d\n", plano+1 );
+			else
+			printf("\n");
+
 				displayStructure(plano, axis);
 
 			//	clearBuffer(); //método para limpiar el buffer
@@ -388,6 +385,8 @@ void menuTower(int *resultado,int *turn, int *menu)
 	if (c == 'q')
 		//Dar diálogo de salida para asegurar que se termine el juego a propósito
 		quitDialog(resultado);
+
+
 	else if (c == 'e')
 	{
 		//Jugar
@@ -411,7 +410,7 @@ void updateMenu(char *c, int *axis, int *plano)
 	switch (*c)
 	{
 	case 'u': //arriba
-		if(*axis+1 > 2)
+		if(*axis+1 > 4)
 			*axis = 0;
 		else
 			(*axis)++;
@@ -419,7 +418,7 @@ void updateMenu(char *c, int *axis, int *plano)
 
 	case 'd': //abajo
 		if(*axis-1 < 0)
-			*axis = 2;
+			*axis = 4;
 		else
 			(*axis)--;
 		break;
@@ -454,7 +453,12 @@ void quitDialog(int *resultado)
 			setbuf(stdin,NULL);
 	} while (var != 1 && input != 1 && input != 2);
 
-	if (input == 1) *resultado = 3;
+	if (input == 1)
+		{*resultado = 3;
+
+			freeTower(tower);
+			tower = initTower();
+		}
 }
 
 void endScreen(int *resultado,int *turn,int *menu)
@@ -500,6 +504,12 @@ void displayStructure(int n,  int axis)
 		break;
 	case Z:
 		displayZ(n);
+		break;
+	case D1:
+		displayD1();
+		break;
+	case D2:
+		displayD2();
 		break;
 	}
 
@@ -570,12 +580,9 @@ void displayY(int n)
 
     Plane* plane = obtainPlane(n, Y);
 
-
     // 2. Mostrarlo en formato "horizontal"
-
     	//Fila de cobertura de asteriscos
     printf("      ");
-
     for(int i=0; i < COLUMNS; ++i)
     {
     	printChar('*');
@@ -593,7 +600,6 @@ void displayY(int n)
     	{
     		printf(" ");
     	}
-
 
     	printChar('*');
     	printf(" ");
@@ -633,8 +639,11 @@ void displayX(int n)
 	    Plane* plane = obtainPlane(n, X);
 	    // 2. Mostrarlo en formato "horizontal"
 
+
+
+
 	    //Final inicial de asteriscos
-	    for (int s = 0; s < COLUMNS; ++s)
+	    for (int s = 0; s < COLUMNS + 2; ++s)
 	        {
 	            printChar('*');
 	            printf(" ");
@@ -667,12 +676,12 @@ void displayX(int n)
 	    }
 
 	    // fila final de asteriscos
-	    for (int s = 0; s < ROWS; ++s)
+	    for (int s = 0; s < ROWS - 2; ++s)
 	    {
 	        printChar(' ');
 	        printChar(' ');
 	    }
-	    for (int j = 0; j < COLUMNS; ++j)
+	    for (int j = 0; j < COLUMNS + 2; ++j)
 	    {
 	        printChar('*');
 	        printChar(' ');
@@ -683,10 +692,177 @@ void displayX(int n)
 
 }
 
+
+
+//Función que muestra la primera diagonal
+void displayD1(void)
+{
+	Plane* p = obtainPlane(0, D1);
+
+	for(int i=0; i < COLUMNS+2; ++i)
+	{
+		printChar('*');
+		printf(" ");
+	}
+	printf("\n");
+
+
+	for(int i=0; i < ROWS; ++i)
+	{
+		printChar('*');
+		printf(" ");
+		for(int j=0; j < COLUMNS; ++j)
+		{
+			printChar(p->board2D[i][j]);
+			printf(" ");
+		}
+		printChar('*');
+		printf("\n");
+	}
+
+	for(int i=0; i < COLUMNS+2; ++i)
+		{
+			printChar('*');
+			printf(" ");
+		}
+		printf("\n");
+
+
+
+	freePlane(p);
+
+
+}
+
+
+
+//Función que muestra la primera diagonal
+void displayD1(void)
+{
+	Plane* p = obtainPlane(0, D1);
+
+	for(int i=0; i < COLUMNS+2; ++i)
+	{
+		printChar('*');
+		printf(" ");
+	}
+	printf("\n");
+
+
+	for(int i=0; i < ROWS; ++i)
+	{
+		printChar('*');
+		printf(" ");
+		for(int j=0; j < COLUMNS; ++j)
+		{
+			printChar(p->board2D[i][j]);
+			printf(" ");
+		}
+		printChar('*');
+		printf("\n");
+	}
+
+	for(int i=0; i < COLUMNS+2; ++i)
+		{
+			printChar('*');
+			printf(" ");
+		}
+		printf("\n");
+
+
+
+	freePlane(p);
+
+
+}
+
+//Función que muestra la segunda diagonal
+void displayD2(void)
+{
+
+	Plane* p = obtainPlane(0, D2);
+
+
+	for(int i=0; i < COLUMNS+2; ++i)
+	{
+		printChar('*');
+		printf(" ");
+	}
+	printf("\n");
+
+
+	for(int i=0; i < ROWS; ++i)
+	{
+		printChar('*');
+		printf(" ");
+		for(int j=0; j < COLUMNS; ++j)
+		{
+			printChar(p->board2D[i][j]);
+			printf(" ");
+		}
+		printChar('*');
+		printf("\n");
+	}
+
+	for(int i=0; i < COLUMNS+2; ++i)
+			{
+				printChar('*');
+				printf(" ");
+			}
+			printf("\n");
+
+
+
+	freePlane(p);
+}
+
+
+//Función que muestra la segunda diagonal
+void displayD2(void)
+{
+
+	Plane* p = obtainPlane(0, D2);
+
+
+	for(int i=0; i < COLUMNS+2; ++i)
+	{
+		printChar('*');
+		printf(" ");
+	}
+	printf("\n");
+
+
+	for(int i=0; i < ROWS; ++i)
+	{
+		printChar('*');
+		printf(" ");
+		for(int j=0; j < COLUMNS; ++j)
+		{
+			printChar(p->board2D[i][j]);
+			printf(" ");
+		}
+		printChar('*');
+		printf("\n");
+	}
+
+	for(int i=0; i < COLUMNS+2; ++i)
+			{
+				printChar('*');
+				printf(" ");
+			}
+			printf("\n");
+
+
+
+	freePlane(p);
+}
+
+
 void diplayCredits(void)
 {
 	printf("\n(c) 2025. Victor Emiliano Rodriguez Aguila\n");
-	printf("Joshua David DeBono Rios\n");
+	printf("      &\n         Joshua David DeBono Rios\n");
+	enterKey();
 }
 
 void printChar(char c)
@@ -750,9 +926,13 @@ void playerTurn(Player *player, Point3D *p,int *resultado) //Función que permit
 			}
 
 		}
-		//else
-			//Ticket();
-			//player->ticket -= 1;
+		else
+		{
+			if(!ticket(player)) continue;
+			player->ticket -= 1;
+
+
+		}
 
 	} while (validTurn == 0);
 }
@@ -772,16 +952,79 @@ void placeMarble(Point3D *p,int dim)
 	} while (var != 1 || x < 0 || x > 4);
 
 	switch (dim) {
-	case X: p->x = x-1; break;
-	case Y: p->y = x-1; break;
-	case Z: p->z = x-1;
+	case X: p->z = x-1; break;
+	case Y: p->x = x-1; break;
+	case Z: p->y = x-1;
 	}
 }
 
-void ticket(Player* player, int turn)
+
+int ticket(Player* player)
 {
-	//Función que permite al usuario cambiar de plano
+    int index, direction, var;
+
+    // Pedir al jugador el plano a girar
+    do {
+        printf("Jugador %c, elige el plano (Z fijo, 1-4): ", player->id);
+        var = scanf("%d", &index);
+        if (var != 1)
+            setbuf(stdin, NULL);
+    } while (var != 1 || index < 1 || index > 4);
+
+    // Pedir dirección de giro
+    do {
+        printf("Elige la direccion:\n"
+               "Izquierda (1)\n"
+               "Derecha   (2)\n");
+        var = scanf("%d", &direction);
+        if (var != 1)
+            setbuf(stdin, NULL);
+    } while (var != 1 || (direction != 1 && direction != 2));
+
+    // Crear copia de la torre como respaldo
+    Tower* backup = copyTower(tower);
+
+    // Obtener el plano fijo en Z
+    Plane* plane = obtainPlane(index - 1, Z);
+
+    // Rotar el plano
+    Plane* rotated;
+    if (direction == 1)
+        rotated = turn90Left(plane);
+    else
+        rotated = turn90Right(plane);
+
+    // Aplicar el plano rotado en la torre real
+    for (int i = 0; i < ROWS; i++)
+        for (int j = 0; j < COLUMNS; j++)
+            tower->board3D[i][j][index - 1] = rotated->board2D[i][j];
+
+    // Verificar si alguien ganó tras el giro
+    int valid = checkAllTower(tower);
+
+    if (valid) {
+        printf("\nEl plano fue girado con exito!\n");
+    } else {
+        printf("\nMovimiento invalido: alguien ganaria con este giro. Revirtiendo...\n");
+
+        // Restaurar desde el respaldo
+        for (int x = 0; x < FLOORS; x++)
+            for (int y = 0; y < ROWS; y++)
+                for (int z = 0; z < COLUMNS; z++)
+                    tower->board3D[x][y][z] = backup->board3D[x][y][z];
+    }
+
+    enterKey();
+    enterKey();
+
+    // Liberar memoria
+    freePlane(plane);
+    freePlane(rotated);
+    freeTower(backup);
+
+    return valid;
 }
+
 
 void verifyWin(Point3D *p, int *resultado)
 {
@@ -790,15 +1033,8 @@ void verifyWin(Point3D *p, int *resultado)
 	Plane* plane;
 	Point2D* p2d;
 
-	/*
-	DIAGONALES 3D
-	000 111 222 333 [i][j][k]
-	030 121 212 303 [i][3-j][k]
-	003 112 221 330 [i][j][3-k]
-	033 122 211 300 [i][3-j][3-k]
-	*/
 
-	for(int i=0; i < 3; i++)
+	for(int i=0; i < 5; i++)
 	{
 		switch(i)
 		{
@@ -816,6 +1052,19 @@ void verifyWin(Point3D *p, int *resultado)
 			plane = obtainPlane(p->z, Z);
 			p2d = obtainPoint2D(p, Z);
 			break;
+
+		case D1:
+			  if (p->x != p->y) continue; // no pertenece al plano
+			plane = obtainPlane(0, D1);
+			p2d = obtainPoint2D(p, D1);
+			break;
+		case D2:
+			  if (p->x + p->z != 3) continue; // no pertenece a la diagonal
+			plane = obtainPlane(0, D2);
+			p2d = obtainPoint2D(p, D2);
+			break;
+
+
 		}
 
 		//proceso de validación
@@ -838,8 +1087,7 @@ void verifyWin(Point3D *p, int *resultado)
 void verifyPlane(Plane* plane, int *resultado,int line, int n)
 {
 	int p1=0, p2=0;
-	int x,y;
-
+	int x=0,y=0;
 	for(int i=0; i < 4; i++)
 	{
 		switch (line) {
@@ -855,10 +1103,76 @@ void verifyPlane(Plane* plane, int *resultado,int line, int n)
 	*resultado = (p1 == 4) ? 1 : (p2 == 4) ? 2 : 0;
 }
 
-void checkAllTower(void)
+
+//Esta función no debería siquiera existir. Pero permite verificar TODA la torre para ver si hay algún movimiento invalido al girar la torre
+int checkAllTower(Tower* t)
 {
-	//Función que checa todos los planos para validar antes de realizar el giro
+    Plane* plane;
+    int resultado = 0;
+
+    // Revisar todos los planos en todos los ejes
+    for (int n = 0; n < 4; n++) {
+        // Eje X
+        plane = obtainPlane(n, X);
+        for (int i = 0; i < 4 && resultado == 0; i++) {
+            verifyPlane(plane, &resultado, 0, i);
+            if(resultado!=0) return 0;
+
+            verifyPlane(plane, &resultado, 1, i);
+            if(resultado!=0) return 0;
+        }
+        verifyPlane(plane, &resultado, 2, 0);
+        if(resultado!=0) return 0;
+        verifyPlane(plane, &resultado, 3, 0);
+        if(resultado!=0) return 0;
+        freePlane(plane);
+
+        // Eje Y
+        plane = obtainPlane(n, Y);
+        for (int i = 0; i < 4 && resultado == 0; i++) {
+            verifyPlane(plane, &resultado, 0, i);
+            if(resultado!=0) return 0;
+            verifyPlane(plane, &resultado, 1, i);
+            if(resultado!=0) return 0;
+        }
+        verifyPlane(plane, &resultado, 2, 0);
+        if(resultado!=0) return 0;
+        verifyPlane(plane, &resultado, 3, 0);
+        if(resultado!=0) return 0;
+        freePlane(plane);
+
+        // Eje Z
+        plane = obtainPlane(n, Z);
+        for (int i = 0; i < 4 && resultado == 0; i++) {
+            verifyPlane(plane, &resultado, 0, i);
+            if(resultado!=0) return 0;
+            verifyPlane(plane, &resultado, 1, i);
+            if(resultado!=0) return 0;
+        }
+        verifyPlane(plane, &resultado, 2, 0);
+        if(resultado!=0) return 0;
+        verifyPlane(plane, &resultado, 3, 0);
+        if(resultado!=0) return 0;
+        freePlane(plane);
+    }
+
+    // Revisar diagonales principales
+    plane = obtainPlane(0, D1);
+    verifyPlane(plane, &resultado, 2, 0);
+    if(resultado!=0) return 0;
+    verifyPlane(plane, &resultado, 3, 0);
+    if(resultado!=0) return 0;
+    freePlane(plane);
+
+    plane = obtainPlane(0, D2);
+    verifyPlane(plane, &resultado, 2, 0);
+    if(resultado!=0) return 0;
+    verifyPlane(plane, &resultado, 3, 0);
+    freePlane(plane);
+
+    return (resultado == 0); // 1 si es válido, 0 si alguien ganó
 }
+
 
 
 Tower* copyTower(Tower* tower)
@@ -925,6 +1239,41 @@ void reset(void)
 {
 	free(tower); free(player1); free(player2);
 	tower = initTower();
+	//Verificar por ubo una inicialización invalida
+
+
 	player1 = initPlayer('1');
 	player2 = initPlayer('2');
+}
+
+
+//Función de giro
+
+Plane* turn90Left(Plane* p)
+{
+
+    Plane* ptr = initPlane();
+
+
+    if(!ptr) return NULL;
+    for(int i=0; i < ROWS; ++i)
+        for(int j=0; j < COLUMNS; ++j)
+            ptr->board2D[COLUMNS-j-1][i] = p->board2D[i][j]; //Se realiza el intercambio
+    //Si todo sale bien
+
+    return ptr; //Se regresa un 0, en señal de que salio bie
+}
+
+Plane* turn90Right(Plane* p)
+{
+
+	Plane* ptr = initPlane();
+     if(!ptr) return NULL;
+
+    //Hacer la rotacióm
+    for(int i=0; i < ROWS; ++i)
+        for(int j=0; j < COLUMNS; ++j)
+                ptr->board2D[j][ROWS-i-1] = p->board2D[i][j];
+
+    return ptr;
 }
