@@ -48,14 +48,12 @@ typedef struct
 } Point3D;
 
 
+
 typedef struct
 {
 	int x;
 	int y;
 } Point2D;
-
-
-
 
 
 enum AXIS{
@@ -74,17 +72,10 @@ enum TURN {
 };
 
 
-
-
-
-
-
-
 //Variables globalbes
 Tower* tower;
 Player* player1;
 Player* player2;
-
 //Prototipos de las funciones
 
 //Funciones de juego
@@ -318,29 +309,6 @@ Plane* obtainPlane(int n, int axis)
 			plane->board2D[i][j] = tower->board3D[x][y][z];
 		}
 	}
-	/*
-	switch(axis)
-	{
-
-	case X:
-		for(int y=0; y <COLUMNS; y++)
-			for(int z=0; z < FLOORS; z++)
-				plane->board2D[y][z] = tower->board3D[n][z][y];
-		break;
-
-	case Y:
-		for(int x=0; x <ROWS; x++)
-			for(int z=0; z < FLOORS; z++)
-				plane->board2D[x][z] = tower->board3D[z][n][x];
-		break;
-
-	case Z:
-		for(int x=0; x < ROWS; x++)
-			for(int y=0; y < COLUMNS; y++)
-				plane->board2D[x][y] = tower->board3D[x][y][n];
-		break;
-	}
-	*/
 	return plane;
 }
 
