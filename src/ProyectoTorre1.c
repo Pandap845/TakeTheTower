@@ -106,24 +106,25 @@ Point2D* initPoint2D(void);
 
 //Funciones GUI
 void menu(void); //Función para el menu principal
-void menuTower(int *resultado,int *turn, int *menu); //Función para mostrar el estado de la torre
-void updateMenu(char *c,int *axis,int *plano);
-void quitDialog(int *resultado);
-void winScreen(int *resultado,int *turn,int *menu);
-void displayStructure(int n,int axis);
-void displayZ(int n);
-void displayY(int n);
-void displayX(int n);
-//void displayD(int n); //Solo dos planos lol
+void menuTower(int *resultado,int *turn, int *menu); //Función para mostrar el menu del juego
+void updateMenu(char *c,int *axis,int *plano); //Función para actualizar el plano y eje de la vista de la torre
+void quitDialog(int *resultado); //Menu para salir
+void endScreen(int *resultado,int *turn,int *menu); //Menu de final del juego
+void displayStructure(int n,int axis); //Función para imprimir el plano y eje
+void displayZ(int n); //Función para imprimir el eje Z
+void displayY(int n); //Función para imprimir el eje Y
+void displayX(int n); //Función para imprimir el eje X
+void displayD(int n); //Función para imprimir los planos diagonales (3D)
 void displayCredits(void);
+void selectPlaneToShow();
 void printChar(char c);
 char readKeyboard(void);
 void clearBuffer(void);
 void enterKey(void);
 void reset(void);
 
-void freeTower(Tower* t);
-void freePlane(Plane* p);
+/* Lista de caras (cada cara tiene 4 puntos en 2D: x,y) */
+
 
 
 //-------------------------------------------
@@ -138,9 +139,7 @@ int main(void) {
 
 	menu();
 
-	freeTower(tower);
-	free(player1);
-	free(player2); //Liberar memoria
+	free(tower); free(player1); free(player2); //Liberar memoria
 }
 
 //Funciones de testing
@@ -172,32 +171,11 @@ Plane* initPlane(void)
 {
 	Plane* p;
 	p = (Plane*)malloc(sizeof(Plane));
-
-
-	//Médidas de seguridad
-	if(!p) return NULL;
-
 	p->board2D = (char**)malloc(sizeof(char**)*ROWS);
-
-	if(!(p->board2D))
-	{
-		free(p);
-		return NULL;
-	}
-
 
 	for(int i=0; i< ROWS; ++i)
 	{
 		p->board2D[i] = (char*)malloc(sizeof(char*)*COLUMNS);
-
-		 if (!(p->board2D[i])) {
-		            for (int j = 0; j < i; ++j) {
-		                free(p->board2D[j]);
-		            }
-		            free(p->board2D);
-		            free(p);
-		            return NULL;
-		        }
 		 memset(p->board2D[i], '0', COLUMNS);  //inicializar en 0
 	}
 
@@ -221,10 +199,8 @@ Player* initPlayer(char id)
 	Player *p;
 	p = (Player*)malloc(sizeof(p));
 
-
-	if(!p) return NULL; //Por si no se inicializa
 	p->id = id;
-	p->ticket = 4;
+	p->ticket = 0;
 	p->marble = 32;
 
 	return p;
@@ -268,37 +244,6 @@ Point2D* initPoint2D(void)
 
 }
 
-
-//Funciones de liberación de memoria
-//Función que limpia la memoria de la torre
-void freeTower(Tower* t)
-{
-
-	for(int i=0; i < FLOORS; ++i)
-	{
-		for(int j=0; j < ROWS; ++j)
-		{
-			free(t->board3D[i][j]); //libera la matriz
-		}
-		free(t->board3D[i]); //Libera la capa
-	}
-	free(t->board3D);
-	free(t);
-}
-
-//Función que libera la memoria del plano
-void freePlane(Plane* p)
-{
-
-	for(int i=0; i < ROWS; ++i)
-	{
-		free(p->board2D[i]);
-	}
-	free(p->board2D);
-	free(p);
-}
-
-
 //--------------------------------
 //Cuerpo de las funciones
 //--------------------------------
@@ -325,29 +270,7 @@ Plane* obtainPlane(int n, int axis)
 			plane->board2D[i][j] = tower->board3D[x][y][z];
 		}
 	}
-	/*
-	switch(axis)
-	{
 
-	case X:
-		for(int y=0; y <COLUMNS; y++)
-			for(int z=0; z < FLOORS; z++)
-				plane->board2D[y][z] = tower->board3D[n][z][y];
-		break;
-
-	case Y:
-		for(int x=0; x <ROWS; x++)
-			for(int z=0; z < FLOORS; z++)
-				plane->board2D[x][z] = tower->board3D[z][n][x];
-		break;
-
-	case Z:
-		for(int x=0; x < ROWS; x++)
-			for(int y=0; y < COLUMNS; y++)
-				plane->board2D[x][y] = tower->board3D[x][y][n];
-		break;
-	}
-	*/
 	return plane;
 }
 
@@ -408,7 +331,7 @@ void menu(void)
 			break;
 
 		case 2:
-			displayCredits();
+			//	displayCredits();
 			enterKey();
 			break;
 
@@ -452,7 +375,7 @@ void menuTower(int *resultado,int *turn, int *menu)
 					"\nIzquierda: Mover plano izquierdo"
 					"\nDerecha:   Mover plano derecho"
 					"\ne:         Pasar turno (Jugador %d)"
-					"\nq:         Salir\n",playerid);
+					"\nq:         Salir\n%d",playerid,*resultado);
 			c = readKeyboard();
 
 			updateMenu(&c,&axis,&plano);
@@ -474,8 +397,11 @@ void menuTower(int *resultado,int *turn, int *menu)
 		else
 			playerTurn(player2,p,resultado);
 
+		if (player1->marble == 0 || player2->marble == 0)
+			*resultado = 3;
 		if (*resultado != 0)
-			winScreen(resultado,turn,menu);
+			endScreen(resultado,turn,menu);
+
 		*turn = !(*turn); //cambia jugador
 	}
 }
@@ -531,16 +457,19 @@ void quitDialog(int *resultado)
 	if (input == 1) *resultado = 3;
 }
 
-void winScreen(int *resultado,int *turn,int *menu)
+void endScreen(int *resultado,int *turn,int *menu)
 {
 	int input,var;
 
 	do {
 		system("cls");
-		printf("\nFELICIDADES - JUGADOR %d HA GANADO!\n"
-				"\nJugar de nuevo     (1)"
-				"\nIr al menu         (2)"
-				"\nSalir del programa (3)\n",*resultado);
+		if (*resultado == 3)
+			printf("\nEMPATE - SE HAN AGOTADO LAS CANICAS\n");
+		else
+			printf("\nFELICIDADES - JUGADOR %d HA GANADO!\n",*resultado);
+		printf("\nJugar de nuevo     (1)"
+			   "\nIr al menu         (2)"
+			   "\nSalir del programa (3)\n");
 		var = scanf("%d",&input);
 		if (var != 1)
 			setbuf(stdin,NULL);
@@ -631,7 +560,7 @@ void displayZ(int n)
     }
     printChar('\n');
 
-    freePlane(plane);
+    free(plane);
 }
 
 
@@ -690,7 +619,7 @@ void displayY(int n)
     }
 
 
-    freePlane(plane);
+    free(plane);
 
 }
 
@@ -750,11 +679,11 @@ void displayX(int n)
 	    }
 	    printChar('\n');
 
-	    freePlane(plane);
+	    free(plane);
 
 }
 
-void displayCredits(void)
+void diplayCredits(void)
 {
 	printf("\n(c) 2025. Victor Emiliano Rodriguez Aguila\n");
 	printf("Joshua David DeBono Rios\n");
@@ -796,20 +725,20 @@ void playerTurn(Player *player, Point3D *p,int *resultado) //Función que permit
 		var = scanf("%d",&x);
 		if (var != 1)
 			setbuf(stdin,NULL);
-		else if (x == 1 && player->ticket == 0)
+		else if (x == 2 && player->ticket == 0)
 		{
-			printf("\nNo tienes suficientes tickets, pasando a colocar una canica.\n");
-			x = 2;
+			printf("No tienes suficientes tickets, pasando a colocar una canica.\n");
+			x = 1;
 		}
-	} while (var != 1 && (x < 0 || x > 2));
+	} while (var != 1 || x < 0 || x > 2);
 
 	do {
 		validTurn = 1;
 		if (x == 1)
 		{
-			placeMarble(p,X);
-			placeMarble(p,Y);
-			placeMarble(p,Z);
+			for (int i = 0; i < 3; i++)
+				placeMarble(p,i);
+
 			if (tower->board3D[p->x][p->y][p->z] != '0')
 			{
 				printf("\nYa hay una canica en ese espacio, intenta de nuevo.\n");
@@ -817,6 +746,7 @@ void playerTurn(Player *player, Point3D *p,int *resultado) //Función que permit
 			} else {
 				tower->board3D[p->x][p->y][p->z] = player->id;
 				verifyWin(p,resultado);
+				player->marble -= 1;
 			}
 
 		}
@@ -825,8 +755,6 @@ void playerTurn(Player *player, Point3D *p,int *resultado) //Función que permit
 			//player->ticket -= 1;
 
 	} while (validTurn == 0);
-
-	player->marble -= 1;
 }
 
 void placeMarble(Point3D *p,int dim)
@@ -834,9 +762,9 @@ void placeMarble(Point3D *p,int dim)
 	int x,var;
 	do {
 		switch (dim) {
-		case X: printf("Declare la capa en el cual quieres posicionar tu canica (1-4):"); break;
-		case Y: printf("Declare la fila en el cual quieres posicionar tu canica (1-4):"); break;
-		case Z: printf("Declare la columna en el cual quieres posicionar tu canica (1-4):");
+		case X: printf("\nDeclare la capa en el cual quieres posicionar tu canica (1-4): "); break;
+		case Y: printf("\nDeclare la fila en el cual quieres posicionar tu canica (1-4): "); break;
+		case Z: printf("\nDeclare la columna en el cual quieres posicionar tu canica (1-4): ");
 		}
 		var = scanf("%d",&x);
 		if (var != 1)
@@ -901,7 +829,7 @@ void verifyWin(Point3D *p, int *resultado)
 		if (*resultado != 0) return;
 
 		//Estar liberando la memoria del plano
-		freePlane(plane);
+		free(plane);
 		free(p2d);
 	}
 }
@@ -915,8 +843,8 @@ void verifyPlane(Plane* plane, int *resultado,int line, int n)
 	for(int i=0; i < 4; i++)
 	{
 		switch (line) {
-		case 0: x = n; y = i; break;
-		case 1: x = i; y = n; break;
+		case 0: x = i; y = n; break;
+		case 1: x = n; y = i; break;
 		case 2: x = i; y = i; break;
 		case 3: x = i; y = 3-i;
 		}
@@ -995,19 +923,8 @@ void enterKey(void)
 
 void reset(void)
 {
-	freeTower(tower); free(player1); free(player2);
+	free(tower); free(player1); free(player2);
 	tower = initTower();
-	//Verificar por ubo una inicialización invalida
-
-
 	player1 = initPlayer('1');
 	player2 = initPlayer('2');
 }
-
-
-
-//funciones de limpieza
-
-
-
-
