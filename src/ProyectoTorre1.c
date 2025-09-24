@@ -113,7 +113,7 @@ void displayD1(void);
 void displayD2(void);
 
 void displayCredits(void);
-void selectPlaneToShow();
+
 void printChar(char c);
 char readKeyboard(void);
 void clearBuffer(void);
@@ -694,46 +694,6 @@ void displayX(int n)
 
 
 
-//Función que muestra la primera diagonal
-void displayD1(void)
-{
-	Plane* p = obtainPlane(0, D1);
-
-	for(int i=0; i < COLUMNS+2; ++i)
-	{
-		printChar('*');
-		printf(" ");
-	}
-	printf("\n");
-
-
-	for(int i=0; i < ROWS; ++i)
-	{
-		printChar('*');
-		printf(" ");
-		for(int j=0; j < COLUMNS; ++j)
-		{
-			printChar(p->board2D[i][j]);
-			printf(" ");
-		}
-		printChar('*');
-		printf("\n");
-	}
-
-	for(int i=0; i < COLUMNS+2; ++i)
-		{
-			printChar('*');
-			printf(" ");
-		}
-		printf("\n");
-
-
-
-	freePlane(p);
-
-
-}
-
 
 
 //Función que muestra la primera diagonal
@@ -775,47 +735,6 @@ void displayD1(void)
 
 
 }
-
-//Función que muestra la segunda diagonal
-void displayD2(void)
-{
-
-	Plane* p = obtainPlane(0, D2);
-
-
-	for(int i=0; i < COLUMNS+2; ++i)
-	{
-		printChar('*');
-		printf(" ");
-	}
-	printf("\n");
-
-
-	for(int i=0; i < ROWS; ++i)
-	{
-		printChar('*');
-		printf(" ");
-		for(int j=0; j < COLUMNS; ++j)
-		{
-			printChar(p->board2D[i][j]);
-			printf(" ");
-		}
-		printChar('*');
-		printf("\n");
-	}
-
-	for(int i=0; i < COLUMNS+2; ++i)
-			{
-				printChar('*');
-				printf(" ");
-			}
-			printf("\n");
-
-
-
-	freePlane(p);
-}
-
 
 //Función que muestra la segunda diagonal
 void displayD2(void)
