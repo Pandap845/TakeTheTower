@@ -83,7 +83,7 @@ void ticket( Player* player,int *resultado); //Función que permite al usuario c
 void placeMarble(Point3D *p, int dim); //Da ingreso de colocación de canica
 void verifyWin(Point3D *p, int *resultado); //Función que checa si ganó el jugador en su turno.
 void verifyPlane(Plane* plane, int *resultado, int line, int n);
-void checkAllTower(Tower* t,int *resultado); //Función que checa todos los planos para validar antes de realizar el giro
+void checkAllTower(Tower* t, Plane* p, int index, int* resultado); //Función que checa todos los planos para validar antes de realizar el giro
 Tower* copyTower(Tower* tower); //Función que genera una copia temporal de la torre antes de realizar el cambio
 Plane* obtainPlane(int n, int axis);
 Point2D* obtainPoint2D(Point3D* p, int axis);
@@ -172,7 +172,7 @@ Player* initPlayer(char id)
 	p = (Player*)malloc(sizeof(Player));
 
 	p->id = id;
-	p->ticket = 0;
+	p->ticket = 4;
 	p->marble = 32;
 
 	return p;
@@ -225,7 +225,6 @@ Plane* obtainPlane(int n, int axis)
 	//Se pasan dos argumentos.
 	//El numero del plano cuando el eje Axis es fijo. De esa forma se diferencian
 	//Entonces:
-
 	for(int i=0; i <COLUMNS; i++) {
 		for(int j=0; j < FLOORS; j++) {
 			switch (axis)
@@ -813,7 +812,7 @@ void displayD2(void)
 }
 
 
-void diplayCredits(void)
+void displayCredits(void)
 {
 	printf("\n(c) 2025. Victor Emiliano Rodriguez Aguila\n");
 	printf("      &\n         Joshua David DeBono Rios\n");
@@ -954,7 +953,7 @@ void ticket(Player* player,int *resultado)
             tower->board3D[i][j][index - 1] = rotated->board2D[i][j];
 
     // Verificar si alguien ganó tras el giro
-    checkAllTower(tower,resultado);
+    checkAllTower(tower, plane, index-1,  resultado);
 
     if (!(*resultado)) {
         printf("\nEl plano fue girado con exito!\n");
@@ -1061,22 +1060,24 @@ void verifyPlane(Plane* plane, int *resultado,int line, int n)
 }
 
 
-//Esta función no debería siquiera existir. Pero permite verificar TODA la torre para ver si hay algún movimiento invalido al girar la torre
-void checkAllTower(Tower* t,int *resultado)
-{
-    Plane* plane;
 
-    /*
-     * p3d->z = plano;
-     *
-     *
-     * for i < 4
-     * 	for j < 4
-     * 		p3d->x = i; p3d->y = j;
-     * 		verifyWin(...)
-     *
-     *
-     */
+//Función CheckAllTower toma como dato la torrw que se pasa, el plano que se quiere girar (así como el indice), y el resultado
+//Permite verificar si al momento de girar alguién ganó verificando todas las posibles intersecciones al girar un determinado plano
+void checkAllTower(Tower* t, Plane* p, int index, int* resultado)
+{
+	Point3D* point = initPoint3D(); //Se crea un punto 3D que se va a estar iterando para verificar todo el plano
+	point->z = index; //Se determina el plano
+
+     for (point->x = 0; point->x < ROWS; ++(point->x)) //Eje x
+    	 for(point->y=0; point->y < COLUMNS; ++(point->y))   //Eje y
+    	 {
+    		 verifyWin(point, resultado);
+
+    		if(resultado!=0) return; //Salirse automaticamente si se identificó que alguien va a ganar
+
+    	 }
+
+     free(point); //liberar memoria
 
 }
 
