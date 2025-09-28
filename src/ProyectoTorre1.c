@@ -809,13 +809,11 @@ void displayD2(void)
 			}
 			printf("\n");
 
-
-
 	freePlane(p);
 }
 
 
-void displayCredits(void)
+void diplayCredits(void)
 {
 	printf("\n(c) 2025. Victor Emiliano Rodriguez Aguila\n");
 	printf("      &\n         Joshua David DeBono Rios\n");
@@ -882,7 +880,6 @@ void playerTurn(Player *player, Point3D *p,int *resultado) //Función que permit
 				verifyWin(p,resultado);
 				player->marble -= 1;
 			}
-
 		}
 		else
 		{
