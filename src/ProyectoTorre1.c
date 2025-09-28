@@ -299,11 +299,10 @@ Tower* copyTower(Tower* tower)
 }
 
 //Función de giro
-Plane* turn90Left(Plane* p)
+Plane* turn90Left(Plane* p) //Función que permite girar 90 grados a la izquierda
 {
 
     Plane* ptr = initPlane();
-
 
     if(!ptr) return NULL;
     for(int i=0; i < ROWS; ++i)
@@ -314,6 +313,8 @@ Plane* turn90Left(Plane* p)
     return ptr; //Se regresa un 0, en señal de que salio bie
 }
 
+
+//Función que permite girar un plano 90 grados a la derecha
 Plane* turn90Right(Plane* p)
 {
 
@@ -533,19 +534,24 @@ void displayStructure(int n,  int axis)
 	switch(axis)
 	{
 	case X:
-		displayX(n);
+		printf("\n Cara lateral derecha del cubo. Donde Plano 1 es la parte frontal, y Plano 4 es la parte trasera.\n");
+		displayX(ROWS-n-1); // Para ajustar la vista a lo que se ve, se empieza desde la cara frontal
 		break;
 
-	case Y:
+	case Y: //Muestra con respecto al eje Y
+		printf("\nCara  lateral izquierda del cubo. Donde Plano 1 es la parte frontal, y Plano 4 es la parte trasera \n");
 		displayY(n);
 		break;
-	case Z:
+	case Z: //Con respecto al eje Z
+		printf("\nCapas horizontales del cubo. Siendo Plano 1 la parte superior, y Plano 4 la parte inferior\n");
 		displayZ(n);
 		break;
-	case D1:
+	case D1: //Así como las diagonales
+		printf("\nDiagonal principal que cruza la torre\n");
 		displayD1();
 		break;
 	case D2:
+		printf("Anti-diaongal que cruza la torre\n");
 		displayD2();
 		break;
 	}
@@ -677,8 +683,6 @@ void displayX(int n)
 	    // 2. Mostrarlo en formato "horizontal"
 
 
-
-
 	    //Final inicial de asteriscos
 	    for (int s = 0; s < COLUMNS + 2; ++s)
 	        {
@@ -728,9 +732,6 @@ void displayX(int n)
 	    free(plane);
 
 }
-
-
-
 
 
 //Función que muestra la primera diagonal
@@ -831,11 +832,9 @@ void printChar(char c)
         case '0':
             printf("*"); // solo un asterizco
             break;
-
         case '*':
         	printf("\033[33m*\033[0m");
         	break;
-
         default:
             printf("%c", c); // basura lol
             break;
@@ -845,7 +844,7 @@ void printChar(char c)
 //Inicializar formalmente el turno del jugador
 void playerTurn(Player *player, Point3D *p,int *resultado) //Función que permite a determinado jugador realizar su turno
 {
-	int x,var,validTurn;
+	int x,var,validTurn, resultTicket;
 
 	do {
 		system("cls");
@@ -882,8 +881,9 @@ void playerTurn(Player *player, Point3D *p,int *resultado) //Función que permit
 		}
 		else
 		{
-			ticket(player,resultado);
-			if(!(*resultado)) continue;
+			resultTicket = 0;
+			ticket(player,&resultTicket);
+			if(!(resultTicket)) continue;
 			player->ticket -= 1;
 		}
 	} while (validTurn == 0);
@@ -1073,7 +1073,7 @@ void checkAllTower(Tower* t, Plane* p, int index, int* resultado)
     	 {
     		 verifyWin(point, resultado);
 
-    		if(resultado!=0) return; //Salirse automaticamente si se identificó que alguien va a ganar
+    		if(*resultado!=0) return; //Salirse automaticamente si se identificó que alguien va a ganar
 
     	 }
 
