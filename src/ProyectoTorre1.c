@@ -23,8 +23,8 @@
 typedef struct
 {
 	char id; //1 //2
-	char ticket;
-	char marble;
+	int ticket;
+	int marble;
 } Player;
 
 
@@ -75,15 +75,16 @@ enum TURN {
 Tower* tower;
 Player* player1;
 Player* player2;
+
 //Prototipos de las funciones
 
 //Funciones de juego
-void playerTurn(Player* player, Point3D *p,int *resultado); //Función que permite a determinado jugador realizar su turno
-void ticket( Player* player,int *resultado); //Función que permite al usuario cambiar de plano
-void placeMarble(Point3D *p, int dim); //Da ingreso de colocación de canica
+void playerTurn(Player* player, Point3D *p,int *resultado,int *turn,int *axis,int *plano); //Función que permite a determinado jugador realizar su turno
+void ticket(Player* player,int *resultado,int *validTurn); //Función que permite al usuario cambiar de plano
+void placeMarble(Point3D *p,Player *player,int *resultado, int *validTurn); //Da ingreso de colocación de canica
 void verifyWin(Point3D *p, int *resultado); //Función que checa si ganó el jugador en su turno.
 void verifyPlane(Plane* plane, int *resultado, int line, int n);
-void checkAllTower(Tower* t, Plane* p, int index, int* resultado); //Función que checa todos los planos para validar antes de realizar el giro
+void checkAllTower(Tower* t,int *resultado); //Función que checa todos los planos para validar antes de realizar el giro
 Tower* copyTower(Tower* tower); //Función que genera una copia temporal de la torre antes de realizar el cambio
 Plane* obtainPlane(int n, int axis);
 Point2D* obtainPoint2D(Point3D* p, int axis);
@@ -98,9 +99,10 @@ Point2D* initPoint2D(void);
 
 //Funciones GUI
 void menu(void); //Función para el menu principal
-void menuTower(int *resultado,int *turn, int *menu); //Función para mostrar el menu del juego
+void menuTower(int *resultado,int *turn, int *menu,int *axis,int *plano); //Función para mostrar el menu del juego
+void displayTower(int n,int* axis,int* plano,char* c);
 void updateMenu(char *c,int *axis,int *plano); //Función para actualizar el plano y eje de la vista de la torre
-void quitDialog(int *resultado); //Menu para salir
+int quitDialog(); //Menu para salir
 void endScreen(int *resultado,int *turn,int *menu); //Menu de final del juego
 void displayStructure(int n,int axis); //Función para imprimir el plano y eje
 void displayZ(int n); //Función para imprimir el eje Z
@@ -132,6 +134,8 @@ int main(void) {
 	tower = initTower();
 	player1 = initPlayer('1');
 	player2 = initPlayer('2');
+
+    tower->board3D[0][0][0] = '1';     tower->board3D[1][0][0] = '1';     tower->board3D[2][0][0] = '1';
 
 	menu();
 
@@ -225,6 +229,7 @@ Plane* obtainPlane(int n, int axis)
 	//Se pasan dos argumentos.
 	//El numero del plano cuando el eje Axis es fijo. De esa forma se diferencian
 	//Entonces:
+
 	for(int i=0; i <COLUMNS; i++) {
 		for(int j=0; j < FLOORS; j++) {
 			switch (axis)
@@ -295,14 +300,14 @@ Tower* copyTower(Tower* tower)
 		}
 	}
 	return t;
-	//Función que genera una copia temporal de la torre antes de realizar el cambio
 }
 
 //Función de giro
-Plane* turn90Left(Plane* p) //Función que permite girar 90 grados a la izquierda
+Plane* turn90Left(Plane* p)
 {
 
     Plane* ptr = initPlane();
+
 
     if(!ptr) return NULL;
     for(int i=0; i < ROWS; ++i)
@@ -313,8 +318,6 @@ Plane* turn90Left(Plane* p) //Función que permite girar 90 grados a la izquierd
     return ptr; //Se regresa un 0, en señal de que salio bie
 }
 
-
-//Función que permite girar un plano 90 grados a la derecha
 Plane* turn90Right(Plane* p)
 {
 
@@ -337,6 +340,7 @@ void menu(void)
 	do {
 		int resultado = 0; //0 => Juego en transcurrencia \\ 1 => Gana jugador 1 \\ 2 => Gana jugador 2 \\ 3 => Se salió de la partida
 		int turn = 0; // 0 => jugador 1 \\ 1 => jugador 2
+		int axis = 0,plano = 0; //Colocar posición y plano de vista
 		system("cls");
 		printf("=========================================\n");
 		printf("           TAKE THE TOWER IN C           \n");
@@ -354,7 +358,7 @@ void menu(void)
 		{
 		case 1:
 			while (resultado == 0)
-				menuTower(&resultado,&turn,&menu);
+                menuTower(&resultado,&turn,&menu,&axis,&plano);
 			break;
 
 		case 2:
@@ -373,74 +377,70 @@ void menu(void)
 	} while (var != 1 || menu != 0);
 }
 
-void menuTower(int *resultado,int *turn, int *menu)
+void menuTower(int *resultado,int *turn, int *menu,int *axis, int *plano)
 {
-	int axis = 0;
-	int plano = 0;
 	char c;
 
 	int playerid = (*turn == 0) ? 1 : 2;
 
-	while(1) //Bucle infinito, en señal que se estará iterando todo el tiempo
-	{
-		do {
-			system("cls");
-			printf("Mostrando plano fijo ");
-			if(axis==X)
-				printf("X");
-			else if(axis == Y)
-				printf("Y");
-			else if(axis == Z)
-				printf("Z");
-			else if (axis == D1)
-				printf("Primera diagonal");
-			else
-				printf("Segunda diagonal");
+	do { //Bucle para desplegar la torre mientras no se presiona 'q' o 'e'
+        displayTower(playerid,axis,plano,&c);
+	} while (c != 'q' && c != 'e');
 
-
-			if(axis != D1 && axis != D2)
-			printf("\n Plano: %d\n", plano+1 );
-			else
-			printf("\n");
-
-				displayStructure(plano, axis);
-
-			//	clearBuffer(); //método para limpiar el buffer
-			printf("\nPulse las teclas para realizar:"
-					"\nArriba:    Cambiar eje arriba"
-					"\nAbajo:     Cambiar eje abajo"
-					"\nIzquierda: Mover plano izquierdo"
-					"\nDerecha:   Mover plano derecho"
-					"\ne:         Pasar turno (Jugador %d)"
-					"\nq:         Salir\n",playerid);
-			c = readKeyboard();
-
-			updateMenu(&c,&axis,&plano);
-
-		} while (c != 'q' && c != 'e');
-
-		break;
-	}
-
-	if (c == 'q')
-		//Dar diálogo de salida para asegurar que se termine el juego a propósito
-		quitDialog(resultado);
-	else if (c == 'e')
+	if (c == 'q' && quitDialog()) //Si se presiona 'q' y quitDialog() == true, se sale del juego y se reinicia
+		*resultado = 3;
+	else if (c == 'e') //Si se presiona 'e', se pasa a la pantalla de turnos.
 	{
 		//Jugar
 		Point3D *p = initPoint3D();
 		if (playerid == 1)
-			playerTurn(player1,p,resultado);
+			playerTurn(player1,p,resultado,turn,axis,plano);
 		else
-			playerTurn(player2,p,resultado);
+			playerTurn(player2,p,resultado,turn,axis,plano);
 
 		if (player1->marble == 0 && player2->marble == 0)
 			*resultado = 3;
 		if (*resultado != 0)
 			endScreen(resultado,turn,menu);
-
-		*turn = !(*turn); //cambia jugador
 	}
+}
+
+void displayTower(int n,int* axis,int* plano,char* c)
+{
+    system("cls");
+	printf("Mostrando plano fijo ");
+
+	if(*axis==X)
+		printf("X");
+	else if(*axis == Y)
+		printf("Y");
+	else if(*axis == Z)
+		printf("Z");
+	else if (*axis == D1)
+		printf("Primera diagonal");
+	else
+		printf("Segunda diagonal");
+
+	if(*axis != D1 && *axis != D2)
+		printf("\n Plano: %d\n", *plano+1 );
+	else
+		printf("\n");
+
+	displayStructure(*plano, *axis);
+
+	printf("\nPulse las teclas para realizar:"
+			"\nArriba:    Cambiar eje arriba"
+			"\nAbajo:     Cambiar eje abajo"
+			"\nIzquierda: Mover plano izquierdo"
+			"\nDerecha:   Mover plano derecho");
+    if (n)
+    {
+     printf("\ne:         Pasar turno (Jugador %d)",n); //Si playerid == 1 || 2, si no, es menu final y no deberá dejar pasar un turno
+    }
+     printf("\nq:         Salir\n");
+	*c = readKeyboard();
+
+	updateMenu(c,axis,plano);
 }
 
 void updateMenu(char *c, int *axis, int *plano)
@@ -477,7 +477,7 @@ void updateMenu(char *c, int *axis, int *plano)
 	}
 }
 
-void quitDialog(int *resultado)
+int quitDialog()
 {
 	int input,var;
 
@@ -485,18 +485,18 @@ void quitDialog(int *resultado)
 		system("cls");
 		printf("\nRealmente quiere salir?"
 				"\nSi (1)"
-				"\nNo (2)\n");
+				"\nNo (0)\n");
 		var = scanf("%d",&input);
 		if (var != 1)
 			setbuf(stdin,NULL);
-	} while (var != 1 && input != 1 && input != 2);
+	} while (var != 1 && input != 0 && input != 1);
 
-	if (input == 1)
-	{
-		*resultado = 3;
-
-		reset();
-	}
+	if (input)
+    {
+        reset();
+        return 1;
+    } else
+        return 0;
 }
 
 void endScreen(int *resultado,int *turn,int *menu)
@@ -509,9 +509,9 @@ void endScreen(int *resultado,int *turn,int *menu)
 			printf("\nEMPATE - SE HAN AGOTADO LAS CANICAS\n");
 		else
 			printf("\nFELICIDADES - JUGADOR %d HA GANADO!\n",*resultado);
-		printf("\nJugar de nuevo     (1)"
-			   "\nIr al menu         (2)"
-			   "\nSalir del programa (3)\n");
+		printf("\nVer tabla final     (1)"
+			   "\nJugar de nuevo      (2)"
+			   "\nIr al menu (3)\n");
 		var = scanf("%d",&input);
 		if (var != 1)
 			setbuf(stdin,NULL);
@@ -519,12 +519,27 @@ void endScreen(int *resultado,int *turn,int *menu)
 
 	switch (input) {
 	case 1:
+	    while (1)
+        {
+            int axis = 0, plano = 0;
+            char c;
+
+            do {
+                displayTower(0,&axis,&plano,&c);
+            } while (c != 'q');
+
+            if (c == 'q' && quitDialog()) break;
+        }
+
+		break;
+	case 2:
 		reset(); //Libera la memoria de torre y jugadores para inicializarlos de nuevo
 		*resultado = 0;
-		*turn = 1; //Al terminar este bloque se pasará el turno, entonces al inicializar el juego empezará con jugador 1 (turno == 0)
+		*turn = 0;
 		break;
-	case 2: reset(); break;
-	case 3: *menu = 0;
+	case 3:
+	    reset();
+	    break;
 	}
 }
 
@@ -534,24 +549,19 @@ void displayStructure(int n,  int axis)
 	switch(axis)
 	{
 	case X:
-		printf("\n Cara lateral derecha del cubo. Donde Plano 1 es la parte frontal, y Plano 4 es la parte trasera.\n");
-		displayX(ROWS-n-1); // Para ajustar la vista a lo que se ve, se empieza desde la cara frontal
+		displayX(n);
 		break;
 
-	case Y: //Muestra con respecto al eje Y
-		printf("\nCara  lateral izquierda del cubo. Donde Plano 1 es la parte frontal, y Plano 4 es la parte trasera \n");
+	case Y:
 		displayY(n);
 		break;
-	case Z: //Con respecto al eje Z
-		printf("\nCapas horizontales del cubo. Siendo Plano 1 la parte superior, y Plano 4 la parte inferior\n");
+	case Z:
 		displayZ(n);
 		break;
-	case D1: //Así como las diagonales
-		printf("\nDiagonal principal que cruza la torre\n");
+	case D1:
 		displayD1();
 		break;
 	case D2:
-		printf("Anti-diaongal que cruza la torre\n");
 		displayD2();
 		break;
 	}
@@ -683,6 +693,8 @@ void displayX(int n)
 	    // 2. Mostrarlo en formato "horizontal"
 
 
+
+
 	    //Final inicial de asteriscos
 	    for (int s = 0; s < COLUMNS + 2; ++s)
 	        {
@@ -730,9 +742,7 @@ void displayX(int n)
 	    printChar('\n');
 
 	    free(plane);
-
 }
-
 
 //Función que muestra la primera diagonal
 void displayD1(void)
@@ -767,11 +777,7 @@ void displayD1(void)
 		}
 		printf("\n");
 
-
-
 	freePlane(p);
-
-
 }
 
 //Función que muestra la segunda diagonal
@@ -809,6 +815,8 @@ void displayD2(void)
 			}
 			printf("\n");
 
+
+
 	freePlane(p);
 }
 
@@ -832,26 +840,29 @@ void printChar(char c)
         case '0':
             printf("*"); // solo un asterizco
             break;
+
         case '*':
         	printf("\033[33m*\033[0m");
         	break;
+
         default:
-            printf("%c", c); // basura lol
+            printf("%c", c);
             break;
     }
 }
 
 //Inicializar formalmente el turno del jugador
-void playerTurn(Player *player, Point3D *p,int *resultado) //Función que permite a determinado jugador realizar su turno
+void playerTurn(Player *player, Point3D *p,int *resultado,int *turn,int *axis,int *plano) //Función que permite a determinado jugador realizar su turno
 {
-	int x,var,validTurn, resultTicket;
+	int x,var,validTurn;
 
 	do {
 		system("cls");
 		printf("JUGADOR %c - TICKETS: %d            \n\n"
 				"Selecciona una accion:               \n"
 				"Colocar una canica                (1)\n"
-				"Girar la tabla (Costo: 1 ticket)  (2)\n",player->id,player->ticket);
+				"Girar la tabla (Costo: 1 ticket)  (2)\n"
+				"Regresar a ver el tablero         (0)\n",player->id,player->ticket);
 		var = scanf("%d",&x);
 		if (var != 1)
 			setbuf(stdin,NULL);
@@ -864,55 +875,59 @@ void playerTurn(Player *player, Point3D *p,int *resultado) //Función que permit
 
 	do {
 		validTurn = 1;
-		if (x == 1)
-		{
-			for (int i = 0; i < 3; i++)
-				placeMarble(p,i);
+        switch (x){
+        case 1:
+            placeMarble(p,player,resultado,&validTurn);
+            break;
+		case 2:
+			ticket(player,resultado,&validTurn);
+        }
+    } while (!validTurn);
 
-			if (tower->board3D[p->x][p->y][p->z] != '0')
-			{
-				printf("\nYa hay una canica en ese espacio, intenta de nuevo.\n");
-				validTurn = 0;
-			} else {
-				tower->board3D[p->x][p->y][p->z] = player->id;
-				verifyWin(p,resultado);
-				player->marble -= 1;
-			}
-		}
-		else
-		{
-			resultTicket = 0;
-			ticket(player,&resultTicket);
-			if(!(resultTicket)) continue;
-			player->ticket -= 1;
-		}
-	} while (validTurn == 0);
+    if (x) {
+        *turn = !(*turn); //cambia de jugador si se terminó de ejecutar un turno
+        *axis = 0;
+        *plano = 0;
+    }
 }
 
 //Solicitar posición en donde el jugador quiera poner su canica
-void placeMarble(Point3D *p,int dim)
+void placeMarble(Point3D *p,Player *player,int* resultado,int* validTurn)
 {
-	int x,var;
-	do {
-		switch (dim) {
-		case X: printf("\nDeclare la capa en el cual quieres posicionar tu canica (1-4): "); break;
-		case Y: printf("\nDeclare la fila en el cual quieres posicionar tu canica (1-4): "); break;
-		case Z: printf("\nDeclare la columna en el cual quieres posicionar tu canica (1-4): ");
-		}
-		var = scanf("%d",&x);
-		if (var != 1)
-			setbuf(stdin,NULL);
-	} while (var != 1 || x < 0 || x > 4);
+    for (int i = 0; i < 3; i++) //Input Dialog (se hace 3 veces, para cada nivel de coordenada)
+    {
+        int x,var;
+        do {
+            switch (i) {
+            case X: printf("\nDeclare la capa en el cual quieres posicionar tu canica (1-4): "); break;
+            case Y: printf("\nDeclare la fila en el cual quieres posicionar tu canica (1-4): "); break;
+            case Z: printf("\nDeclare la columna en el cual quieres posicionar tu canica (1-4): ");
+            }
+            var = scanf("%d",&x);
+            if (var != 1)
+                setbuf(stdin,NULL);
+        } while (var != 1 || x < 0 || x > 4);
 
-	switch (dim) {
-	case X: p->z = x-1; break;
-	case Y: p->x = x-1; break;
-	case Z: p->y = x-1;
+        switch (i) {
+        case X: p->z = x-1; break;
+        case Y: p->x = x-1; break;
+        case Z: p->y = x-1;
+        }
+    }
+
+	if (tower->board3D[p->x][p->y][p->z] != '0')
+    {
+		printf("\nYa hay una canica en ese espacio, intenta de nuevo.\n");
+		*validTurn = 0;
+	} else {
+		tower->board3D[p->x][p->y][p->z] = player->id;
+		verifyWin(p,resultado);
+		player->marble -= 1;
 	}
 }
 
 //Solicitar información del giro y validarlo
-void ticket(Player* player,int *resultado)
+void ticket(Player* player,int *resultado,int *validTurn)
 {
     int index, direction, var;
 
@@ -941,11 +956,7 @@ void ticket(Player* player,int *resultado)
     Plane* plane = obtainPlane(index - 1, Z);
 
     // Rotar el plano
-    Plane* rotated;
-    if (direction == 1)
-        rotated = turn90Left(plane);
-    else
-        rotated = turn90Right(plane);
+    Plane* rotated = (direction == 1) ? turn90Left(plane) : turn90Right(plane);
 
     // Aplicar el plano rotado en la torre real
     for (int i = 0; i < ROWS; i++)
@@ -953,22 +964,21 @@ void ticket(Player* player,int *resultado)
             tower->board3D[i][j][index - 1] = rotated->board2D[i][j];
 
     // Verificar si alguien ganó tras el giro
-    checkAllTower(tower, plane, index-1,  resultado);
+    checkAllTower(tower,resultado);
 
     if (!(*resultado)) {
         printf("\nEl plano fue girado con exito!\n");
     } else {
-        printf("\nMovimiento invalido: alguien ganaria con este giro. Revirtiendo...\n");
+        printf("\nMovimiento invalido: alguien ganaria con este giro. Intenta de nuevo.\n");
 
         // Restaurar desde el respaldo
         for (int x = 0; x < FLOORS; x++)
             for (int y = 0; y < ROWS; y++)
                 for (int z = 0; z < COLUMNS; z++)
                     tower->board3D[x][y][z] = backup->board3D[x][y][z];
+        *validTurn = 0;
+        *resultado = 0;
     }
-
-    enterKey();
-    enterKey();
 
     // Liberar memoria
     freePlane(plane);
@@ -1060,24 +1070,22 @@ void verifyPlane(Plane* plane, int *resultado,int line, int n)
 }
 
 
-
-//Función CheckAllTower toma como dato la torrw que se pasa, el plano que se quiere girar (así como el indice), y el resultado
-//Permite verificar si al momento de girar alguién ganó verificando todas las posibles intersecciones al girar un determinado plano
-void checkAllTower(Tower* t, Plane* p, int index, int* resultado)
+//Esta función no debería siquiera existir. Pero permite verificar TODA la torre para ver si hay algún movimiento invalido al girar la torre
+void checkAllTower(Tower* t,int *resultado)
 {
-	Point3D* point = initPoint3D(); //Se crea un punto 3D que se va a estar iterando para verificar todo el plano
-	point->z = index; //Se determina el plano
+    Plane* plane;
 
-     for (point->x = 0; point->x < ROWS; ++(point->x)) //Eje x
-    	 for(point->y=0; point->y < COLUMNS; ++(point->y))   //Eje y
-    	 {
-    		 verifyWin(point, resultado);
-
-    		if(*resultado!=0) return; //Salirse automaticamente si se identificó que alguien va a ganar
-
-    	 }
-
-     free(point); //liberar memoria
+    /*
+     * p3d->z = plano;
+     *
+     *
+     * for i < 4
+     * 	for j < 4
+     * 		p3d->x = i; p3d->y = j;
+     * 		verifyWin(...)
+     *
+     *
+     */
 
 }
 
@@ -1155,7 +1163,6 @@ void reset(void)
 {
 	freeTower(tower); free(player1); free(player2);
 	tower = initTower();
-	//Verificar por ubo una inicialización invalida
 
 	player1 = initPlayer('1');
 	player2 = initPlayer('2');
