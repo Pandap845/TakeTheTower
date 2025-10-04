@@ -600,16 +600,16 @@ void displayStructure(int n,  int axis)
 	switch(axis)
 	{
 	case X:
-		printf("\n Cara lateral derecha del cubo. Donde Plano 1 es la parte frontal, y Plano 4 es la parte trasera.\n");
+		printf("\nCara lateral derecha del cubo. Donde Plano 1 es la parte frontal, y Plano 4 es la parte trasera.\n");
 		displayX(ROWS-n-1); // Para ajustar la vista a lo que se ve, se empieza desde la cara frontal
 		break;
 
 	case Y: //Muestra con respecto al eje Y
-		printf("\nCara  lateral izquierda del cubo. Donde Plano 1 es la parte frontal, y Plano 4 es la parte trasera \n");
+		printf("\nCara lateral izquierda del cubo. Donde Plano 1 es la parte izquierda, y Plano 4 es la parte derecha.\n");
 		displayY(n);
 		break;
 	case Z: //Con respecto al eje Z
-		printf("\nCapas horizontales del cubo. Siendo Plano 1 la parte superior, y Plano 4 la parte inferior\n");
+		printf("\nCapas horizontales del cubo. Siendo Plano 1 la parte superior, y Plano 4 la parte inferior.\n");
 		displayZ(n);
 		break;
 	case D1: //Así como las diagonales
@@ -700,8 +700,6 @@ void displayY(int n)
     }
     printf("\n");
 
-
-
     for(int i=0; i < ROWS; ++i)
     {
 
@@ -722,8 +720,6 @@ void displayY(int n)
     	}
     	printChar('*');
     	printf("\n");
-
-
     }
 
     printf("   ");
@@ -733,10 +729,9 @@ void displayY(int n)
     	printChar('*');
     	printf(" ");
     }
-
+    printf("\n");
 
     free(plane);
-
 }
 
 
@@ -748,9 +743,6 @@ void displayX(int n)
 
 	    Plane* plane = obtainPlane(n, X);
 	    // 2. Mostrarlo en formato "horizontal"
-
-
-
 
 	    //Final inicial de asteriscos
 	    for (int s = 0; s < COLUMNS + 2; ++s)
