@@ -25,19 +25,19 @@ typedef struct
 	char id; //1 //2
 	int ticket;
 	int marble;
-} Player;
+} Player; //Representa la información de un jugador
 
 
 typedef struct
 {
 	char*** board3D;
-} Tower;
+} Tower; //Representa la información de la torre
 
 
 typedef struct
 {
 	char** board2D;
-} Plane;
+} Plane; //Representa la informacióin de cada uno de los planos de la torrre
 
 
 typedef struct
@@ -45,7 +45,7 @@ typedef struct
 	int x;
 	int y;
 	int z;
-} Point3D;
+} Point3D; //Representa un punto 3D
 
 
 
@@ -53,7 +53,7 @@ typedef struct
 {
 	int x;
 	int y;
-} Point2D;
+} Point2D; //Representa un punto 2D
 
 
 enum AXIS{
@@ -86,8 +86,8 @@ void verifyWin(Point3D *p, int *resultado); //Función que checa si ganó el jug
 void verifyPlane(Plane* plane, int *resultado, int line, int n);
 void checkAllTower(Tower* t, Plane* p, int index, int* resultado); //Función que checa todos los planos para validar antes de realizar el giro
 Tower* copyTower(Tower* tower); //Función que genera una copia temporal de la torre antes de realizar el cambio
-Plane* obtainPlane(int n, int axis);
-Point2D* obtainPoint2D(Point3D* p, int axis);
+Plane* obtainPlane(int n, int axis); //Función que obtiene el plano a analizar
+Point2D* obtainPoint2D(Point3D* p, int axis); //Función que transforma un punto 3D a 2D
 
 //funciones incializadoras
 Tower* initTower(void);
@@ -135,45 +135,59 @@ int main(void) {
 	player1 = initPlayer('1');
 	player2 = initPlayer('2');
 
-    tower->board3D[0][0][0] = '1';     tower->board3D[1][0][0] = '1';     tower->board3D[2][0][0] = '1';
-
 	menu();
 
-	free(tower); free(player1); free(player2); //Liberar memoria
+	freeTower(tower);
+	free(player1);
+	free(player2); //Liberar memoria
 }
 
 //Funciones inicializadoras
 
 Plane* initPlane(void)
 {
-	Plane* p;
-	p = (Plane*)malloc(sizeof(Plane));
-	p->board2D = (char**)malloc(sizeof(char**)*ROWS);
+    Plane* p = (Plane*)malloc(sizeof(Plane));
+    if(!p)
+    {
+        printf("No se inicializo la memoria del plano\n");
+        exit(-1);
+    }
 
-	for(int i=0; i< ROWS; ++i)
-	{
-		p->board2D[i] = (char*)malloc(sizeof(char*)*COLUMNS);
-		 memset(p->board2D[i], '0', COLUMNS);  //inicializar en 0
-	}
+    p->board2D = (char**)malloc(sizeof(char*)*ROWS);
+    if(!(p->board2D))
+    {
+        printf("No se inicializo la memoria del tablero del plano\n");
+        exit(-2);
+    }
 
-	return p;
+    for(int i = 0; i < ROWS; ++i)
+    {
+        p->board2D[i] = (char*)malloc(sizeof(char)*COLUMNS);
+        if(!(p->board2D[i]))
+        {
+            printf("No se inicializo la memoria de la fila %d del plano\n", i);
+            exit(-3);
+        }
+
+        memset(p->board2D[i], '0', COLUMNS);  // inicializar en '0'
+    }
+
+    return p;
 }
 
 
-void clearPlane(Plane* plane)
-{
-
-	for(int i=0; i< ROWS; ++i)
-	{
-		 memset(plane->board2D[i], '0', COLUMNS);
-	}
-
-}
-
+//FUnción que inicia en memoria lo correspondiente al jugador
 Player* initPlayer(char id)
 {
 	Player *p;
 	p = (Player*)malloc(sizeof(Player));
+
+
+	if(!p)
+	{
+		printf("No se inicializo la memoria del jugador\n");
+		exit(-4);
+	}
 
 	p->id = id;
 	p->ticket = 4;
@@ -182,31 +196,54 @@ Player* initPlayer(char id)
 	return p;
 }
 
-Tower* initTower(void)
-{
-	Tower *t;
-	t = (Tower*)malloc(sizeof(Tower));
 
-	t->board3D  = (char***)malloc(sizeof(char**)*FLOORS);
+//Función que inicializa en memoria a la torre
+Tower* initTower(void) {
+    Tower *t = (Tower*)malloc(sizeof(Tower));
+    if(!t) {
+        printf("No se inicializo adecuadamente la torre\n");
+        exit(-1);
+    }
 
-	for(int i=0; i < FLOORS; ++i)
-	{
-		t->board3D[i] = (char**)malloc(sizeof(char*)*ROWS);
-		for(int j=0; j < ROWS; ++j)
-		{
-			t->board3D[i][j] = (char*)malloc(sizeof(char)*COLUMNS);
-			memset(t->board3D[i][j], '0', sizeof(COLUMNS));
-		}
-	}
+    t->board3D  = (char***)malloc(sizeof(char**)*FLOORS);
+    if(!(t->board3D)) {
+        printf("No se inicializo la memoria del tablero 3D\n");
+        exit(-2);
+    }
 
-	 //inicializar en 0
-	return t;
+    for(int i = 0; i < FLOORS; ++i) {
+        t->board3D[i] = (char**)malloc(sizeof(char*)*ROWS);
+        if(!(t->board3D[i])) {
+            printf("No se inicializo adecuadamente la memoria para las filas del piso %d\n", i);
+            exit(-3);
+        }
+
+        for(int j = 0; j < ROWS; ++j) {
+            t->board3D[i][j] = (char*)malloc(sizeof(char)*COLUMNS);
+            if(!(t->board3D[i][j])) {
+                printf("No se inicializo adecuadamente la memoria de la fila %d del piso %d\n", j, i);
+                exit(-4);
+            }
+
+            memset(t->board3D[i][j], '0', COLUMNS);
+        }
+    }
+
+    return t;
 }
+
 
 Point3D* initPoint3D(void)
 {
 	Point3D* p;
 	p = (Point3D*)malloc(sizeof(Point3D));
+
+
+	if(!p)
+	{
+		printf("No se inicializo el punto 3D\n");
+		exit(-5);
+	}
 	return p;
 
 }
@@ -214,13 +251,20 @@ Point2D* initPoint2D(void)
 {
 	Point2D* p;
 	p = (Point2D*)malloc(sizeof(Point2D));
+
+	if(!p)
+	{
+		printf("No se inicializo el punto 2D\n");
+		exit(-6);
+	}
+
 	return p;
 
 }
 
 //--------------------------------
 //Cuerpo de las funciones
-//--------------------------------
+//-------------------------------
 Plane* obtainPlane(int n, int axis)
 {
 	Plane* plane =  initPlane();
@@ -405,6 +449,8 @@ void menuTower(int *resultado,int *turn, int *menu,int *axis, int *plano)
 	}
 }
 
+
+//FUnción que muestra los metadatos del plano a visualizar
 void displayTower(int n,int* axis,int* plano,char* c)
 {
     system("cls");
@@ -443,6 +489,7 @@ void displayTower(int n,int* axis,int* plano,char* c)
 	updateMenu(c,axis,plano);
 }
 
+//FUnción que permite actualizar y recibir las entradas del teclado del usuario
 void updateMenu(char *c, int *axis, int *plano)
 {
 	switch (*c)
@@ -477,6 +524,7 @@ void updateMenu(char *c, int *axis, int *plano)
 	}
 }
 
+//FUnción que muestra pantalla de confirmación
 int quitDialog()
 {
 	int input,var;
@@ -499,6 +547,8 @@ int quitDialog()
         return 0;
 }
 
+
+//Pantalla final del juego. Permite visualizar el tablero al finalizar
 void endScreen(int *resultado,int *turn,int *menu)
 {
 	int input,var;
@@ -543,6 +593,8 @@ void endScreen(int *resultado,int *turn,int *menu)
 	}
 }
 
+
+//Función que manda a llamar cada una de los distintos posibles planos
 void displayStructure(int n,  int axis)
 {
 	switch(axis)
@@ -1137,32 +1189,38 @@ void enterKey(void)
 
 //Funciones de liberación de memoria
 //Función que limpia la memoria de la torre
+// Función que limpia la memoria de la torre
 void freeTower(Tower* t)
 {
+    if(!t) return;  // Si directamente se manda un NULL
 
-	for(int i=0; i < FLOORS; ++i)
-	{
-		for(int j=0; j < ROWS; ++j)
-		{
-			free(t->board3D[i][j]); //libera la matriz
-		}
-		free(t->board3D[i]); //Libera la capa
-	}
-	free(t->board3D);
-	free(t);
+    for(int i = 0; i < FLOORS; ++i)
+    {
+        for(int j = 0; j < ROWS; ++j)
+        {
+            free(t->board3D[i][j]); // libera cada fila
+        }
+        free(t->board3D[i]); // libera la matriz de punteros de cada piso
+    }
+
+    free(t->board3D); // libera el arreglo de pisos
+    free(t);          // libera la torre
 }
 
-//Función que libera la memoria del plano
+// Función que libera la memoria del plano
 void freePlane(Plane* p)
 {
+    if(!p) return; // si directamente el plano es nulo
 
-	for(int i=0; i < ROWS; ++i)
-	{
-		free(p->board2D[i]);
-	}
-	free(p->board2D);
-	free(p);
+    for(int i = 0; i < ROWS; ++i)
+    {
+        free(p->board2D[i]); // libera cada fila
+    }
+
+    free(p->board2D); // libera el arreglo de punteros a filas
+    free(p);          // libera el plano
 }
+
 
 //Limpia la torre y los datos de cada jugador y los vuelve a inicializar para el próximo juego
 void reset(void)
