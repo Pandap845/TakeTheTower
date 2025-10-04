@@ -938,6 +938,8 @@ void playerTurn(Player *player, Point3D *p,int *resultado,int *turn,int *axis,in
             break;
 		case 2:
 			ticket(player,resultado,&validTurn);
+			if(validTurn) player->ticket-=1; //FUnciona con lógica inversa. si es distinto de 0 quiere decir que sí giro.
+
         }
     } while (!validTurn);
 
@@ -1023,12 +1025,14 @@ void ticket(Player* player,int *resultado,int *validTurn)
     // Verificar si alguien ganó tras el giro
     checkAllTower(tower, plane, index-1, resultado);
 
-    if (!(*resultado)) {
-
+    if (!(*resultado)) { //Verifica si el giro fue valido
         printf("\nEl plano fue girado con exito!\n");
+        enterKey();
+        enterKey();
     } else {
         printf("\nMovimiento invalido: alguien ganaria con este giro. Intenta de nuevo.\n");
-
+        enterKey();
+        enterKey();
         // Restaurar desde el respaldo
         for (int x = 0; x < FLOORS; x++)
             for (int y = 0; y < ROWS; y++)
