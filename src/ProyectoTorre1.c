@@ -551,7 +551,7 @@ void displayStructure(int n,  int axis)
 		displayD1();
 		break;
 	case D2:
-		printf("Anti-diaongal que cruza la torre\n");
+		printf("\nAnti-diagonal que cruza la torre\n");
 		displayD2();
 		break;
 	}
@@ -883,7 +883,7 @@ void playerTurn(Player *player, Point3D *p,int *resultado) //Función que permit
 		{
 			resultTicket = 0;
 			ticket(player,&resultTicket);
-			if(!(resultTicket)) continue;
+			if((resultTicket)) continue;
 			player->ticket -= 1;
 		}
 	} while (validTurn == 0);
@@ -956,6 +956,7 @@ void ticket(Player* player,int *resultado)
     checkAllTower(tower, plane, index-1,  resultado);
 
     if (!(*resultado)) {
+
         printf("\nEl plano fue girado con exito!\n");
     } else {
         printf("\nMovimiento invalido: alguien ganaria con este giro. Revirtiendo...\n");
@@ -1012,12 +1013,12 @@ void verifyWin(Point3D *p, int *resultado)
 			break;
 
 		case D1:
-			  if (p->x != p->y) continue; // no pertenece al plano
+
 			plane = obtainPlane(0, D1);
 			p2d = obtainPoint2D(p, D1);
 			break;
 		case D2:
-			  if (p->x + p->z != 3) continue; // no pertenece a la diagonal
+
 			plane = obtainPlane(0, D2);
 			p2d = obtainPoint2D(p, D2);
 			break;
