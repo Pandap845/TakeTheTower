@@ -534,6 +534,8 @@ int quitDialog(void)
     case 0:
         return 0;
     }
+
+    return 0;
 }
 
 
@@ -999,7 +1001,7 @@ void ticket(Player* player,int *resultado,int *validTurn)
         var = scanf("%d", &direction);
         if (var != 1)
             setbuf(stdin, NULL);
-    } while (var != 1 || direction != 1 && direction != 2);
+    } while (var != 1 || (direction != 1 && direction != 2));
 
     // Crear copia de la torre como respaldo
     Tower* backup = copyTower(tower);
