@@ -134,6 +134,8 @@ int main(void) {
 	player1 = initPlayer('1');
 	player2 = initPlayer('2');
 
+    tower->board3D[0][0][0] = '1'; tower->board3D[1][1][1] = '1'; tower->board3D[2][2][2] = '1';
+    tower->board3D[0][1][0] = '2'; tower->board3D[1][2][1] = '2'; tower->board3D[2][3][2] = '2';
 	menu();
 
 	freeTower(tower);
@@ -307,8 +309,6 @@ Point2D* obtainPoint2D(Point3D* p, int axis)
 		p2d->y = p->z;
 		break;
 
-	case D1:
-	case D2:
 	case Y: //(x,z)
 		p2d->x = p->x;
 		p2d->y = p->z;
@@ -346,7 +346,6 @@ Plane* turn90Left(Plane* p)
 {
 
     Plane* ptr = initPlane();
-
 
     if(!ptr) return NULL;
     for(int i=0; i < ROWS; ++i)
@@ -967,8 +966,8 @@ void placeMarble(Player *player,int* resultado,int* validTurn)
 		tower->board3D[p->x][p->y][p->z] = player->id;
 		//Verificar tabla en ese punto
 		verifyDiagonals(D1,resultado);
-		verifyDiagonals(D2,resultado);
-		verifyWin(p,resultado);
+		if (!(*resultado)) verifyDiagonals(D2,resultado);
+		if (!(*resultado)) verifyWin(p,resultado);
 
 		player->marble -= 1;
 		printf("\nCanica colocada con exito! Presiona una tecla para continuar.\n");
@@ -985,7 +984,7 @@ void ticket(Player* player,int *resultado,int *validTurn)
 
     // Pedir al jugador el plano a girar
     do {
-        printf("Jugador %c, elige el plano (Z fijo, 1-4): ", player->id);
+        printf("Jugador %c, elige el plano (X fijo, 1-4): ", player->id);
         var = scanf("%d", &index);
         if (var != 1)
             setbuf(stdin, NULL);
@@ -1004,8 +1003,8 @@ void ticket(Player* player,int *resultado,int *validTurn)
     // Crear copia de la torre como respaldo
     Tower* backup = copyTower(tower);
 
-    // Obtener el plano fijo en Z
-    Plane* plane = obtainPlane(index - 1, Z);
+    // Obtener el plano fijo en X
+    Plane* plane = obtainPlane(index - 1, X);
 
     // Rotar el plano
     Plane* rotated = (direction == 1) ? turn90Left(plane) : turn90Right(plane);
@@ -1049,11 +1048,11 @@ void ticket(Player* player,int *resultado,int *validTurn)
 
 void verifyDiagonals(int axis,int *resultado)
 {
-    plane = obtainPlane(0, axis);
+    Plane* plane = obtainPlane(0, axis);
     verifyPlane(plane,resultado,2,0); //Checar primera diagonal
-	if (*resultado) return;
+	if (*resultado) {free(plane); return;}
 	verifyPlane(plane,resultado,3,0); //Checar segunda diagonal
-	if (*resultado) return;
+	if (*resultado) {free(plane); return;}
 
 	free(plane);
 }
@@ -1087,13 +1086,13 @@ void verifyWin(Point3D *p, int *resultado)
 
 		//proceso de validación
 		verifyPlane(plane,resultado,0,p2d->x); //Checar horizontalmente
-		if (*resultado) return;
+		if (*resultado) {free(plane); free(p2d); return;}
 		verifyPlane(plane,resultado,1,p2d->y); //Checar verticalmente
-		if (*resultado) return;
+		if (*resultado) {free(plane); free(p2d); return;}
 		verifyPlane(plane,resultado,2,0); //Checar primera diagonal
-		if (*resultado) return;
+		if (*resultado) {free(plane); free(p2d); return;}
 		verifyPlane(plane,resultado,3,0); //Checar segunda diagonal
-		if (*resultado) return;
+		if (*resultado) {free(plane); free(p2d); return;}
 
 		//Estar liberando la memoria del plano
 		free(plane);
@@ -1131,15 +1130,15 @@ void checkAllTower(Tower* t, Plane* p, int index, int* resultado)
 	point->z = index; //Se determina el plano
 
     verifyDiagonals(D1,resultado);
-    if (*resultado) return;
+    if (*resultado) {free(point); return;}
     verifyDiagonals(D2,resultado);
-    if (*resultado) return;
+    if (*resultado) {free(point); return;}
 
     for (point->x = 0; point->x < ROWS; ++(point->x)) //Eje x
         for(point->y=0; point->y < COLUMNS; ++(point->y)) //Eje y
         {
             verifyWin(point, resultado);
-            if(*resultado) return; //Salirse automaticamente si se identificó que alguien va a ganar
+            if(*resultado) {free(point); return;} //Salirse automaticamente si se identificó que alguien va a ganar
         }
 
      free(point); //liberar memoria
