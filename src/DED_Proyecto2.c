@@ -280,9 +280,9 @@ Plane* obtainPlane(int n, int axis)
 			switch (axis)
 			{
 			case X:
-				x = n; y = j; z = i; break;
+				x = n; y = i; z = j; break;
 			case Y:
-				x = j; y = n; z = i; break;
+				x = i; y = n; z = j; break;
 			case Z:
 				x = i; y = j; z = n; break;
 			case D1:
@@ -328,11 +328,11 @@ Tower* copyTower(Tower* tower)
 {
 	Tower* t = initTower();
 
-	for(int x=0; x < 4; x++)
+	for(int x=0; x < FLOORS; x++)
 	{
-		for(int y=0; y < 4; y++)
+		for(int y=0; y < ROWS; y++)
 		{
-			for(int z = 0; z < 4; z++)
+			for(int z = 0;   z < COLUMNS  ; z++)
 			{
 				t->board3D[x][y][z] = tower->board3D[x][y][z];
 			}
@@ -1012,7 +1012,7 @@ void ticket(Player* player,int *resultado,int *validTurn)
     // Aplicar el plano rotado en la torre real
     for (int i = 0; i < ROWS; i++)
         for (int j = 0; j < COLUMNS; j++)
-            tower->board3D[i][j][index - 1] = rotated->board2D[i][j];
+            tower->board3D[index-1][i][j] = rotated->board2D[i][j];
 
     // Verificar si alguien ganó tras el giro
     checkAllTower(tower, plane, index-1, resultado);
@@ -1093,7 +1093,6 @@ void verifyWin(Point3D *p, int *resultado)
 		if (*resultado) {free(plane); free(p2d); return;}
 		verifyPlane(plane,resultado,3,0); //Checar segunda diagonal
 		if (*resultado) {free(plane); free(p2d); return;}
-
 		//Estar liberando la memoria del plano
 		free(plane);
 		free(p2d);
@@ -1127,15 +1126,15 @@ void verifyPlane(Plane* plane, int *resultado,int line, int n)
 void checkAllTower(Tower* t, Plane* p, int index, int* resultado)
 {
 	Point3D* point = initPoint3D(); //Se crea un punto 3D que se va a estar iterando para verificar todo el plano
-	point->z = index; //Se determina el plano
+	point->x = index; //Se determina el plano
 
     verifyDiagonals(D1,resultado);
     if (*resultado) {free(point); return;}
     verifyDiagonals(D2,resultado);
     if (*resultado) {free(point); return;}
 
-    for (point->x = 0; point->x < ROWS; ++(point->x)) //Eje x
-        for(point->y=0; point->y < COLUMNS; ++(point->y)) //Eje y
+    for (point->y = 0; point->y < ROWS; ++(point->y)) //Eje y
+        for(point->z=0; point->z < COLUMNS; ++(point->z)) //Eje z
         {
             verifyWin(point, resultado);
             if(*resultado) {free(point); return;} //Salirse automaticamente si se identificó que alguien va a ganar
