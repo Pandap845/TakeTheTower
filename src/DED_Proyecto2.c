@@ -58,13 +58,6 @@ enum AXIS{
 	D2
 };
 
-
-enum TURN {
-
-	LEFT,
-	RIGHT
-};
-
 //Variables globales
 int DIMENSION,PLAYERS;
 
@@ -74,8 +67,8 @@ Player** players;
 //Prototipos de las funciones
 
 //Funciones GUI
-void menu(void); //Función para el menu principal
-void menuTower(int *resultado,int *turn, int *menu,int *axis,int *plano); //Función para mostrar el menu del juego
+void gameStart(int *menu); //Función para el menu principal
+void menuTower(int *menu,int *resultado,int *turn,int *axis,int *plano); //Función para mostrar el menu del juego
 void displayTower(int n,int *axis,int *plano,char *c);
 void updateMenu(char *c,int *axis,int *plano); //Función para actualizar el plano y eje de la vista de la torre
 int quitDialog(void); //Menu para salir
@@ -124,7 +117,39 @@ Plane* turn90Right(Plane* p);
 
 int main(void) {
 	//inicializar torre y jugadores
-	menu();
+	int var,menu;
+
+	do {
+		system("cls");
+		printf("=========================================\n");
+		printf("           TAKE THE TOWER IN C           \n");
+		printf("=========================================\n");
+
+		printf("Menu:\n "
+				"\nJugar        (1)"
+				"\nVer creditos (2)"
+				"\nSalir        (0)\n");
+		var = scanf("%d", &menu);
+		if (var != 1) setbuf(stdin,NULL);
+
+		switch(menu)
+		{
+		case 1: //Entrar al juego
+            while (menu == 1)
+                gameStart(&menu);
+			break;
+		case 2: //Mostrar créditos
+		    system("cls");
+            printf("\n(c) 2025.\n"
+                   "Victor Emiliano Rodriguez Aguila\n"
+                   "& Joshua David DeBono Rios\n\n"
+                   "Presiona una tecla para regresar.");
+            enterKey();
+			break;
+        case 0:
+            printf("\nHasta luego!\n");
+		}
+	} while (var != 1 || menu != 0);
 }
 
 //Funciones inicializadoras
@@ -356,67 +381,40 @@ Plane* turn90Right(Plane* p)
 }
 
 //Empiezo de GUI
-void menu(void)
+void gameStart(int *menu)
 {
-	int var,menu;
+    int var;
+    int resultado = 0; //0 => Juego en transcurrencia \\ 1 - 4 => ganó el jugador correspondiente \\ 5 => Se salió de la partida/empate
+    int turn = 0; // turn corresponde al número del jugador respectivo
+    int axis = 0, plano = 0; //Colocar posición y plano de vista
 
-	do {
-		system("cls");
-		printf("=========================================\n");
-		printf("           TAKE THE TOWER IN C           \n");
-		printf("=========================================\n");
+    //Solicitando datos preliminarios del juego
+    system("cls");
+    printf("------EMPEZANDO JUEGO TAKE THE TOWER----\n\n");
+    do {
+        printf("De cuantas dimensiones es su tabla? (3-5) ");
+        var = scanf("%d",&DIMENSION);
+        if (var != 1) setbuf(stdin,NULL);
+    } while (var != 1 || DIMENSION < 3 || DIMENSION > 5);
 
-		printf("Menu:\n "
-				"\nJugar        (1)"
-				"\nVer creditos (2)"
-				"\nSalir        (0)\n");
-		var = scanf("%d", &menu);
-		if (var != 1) setbuf(stdin,NULL);
+    do {
+        printf("Cuantos jugadores quieren jugar? (2-4) ");
+        var = scanf("%d",&PLAYERS);
+        if (var != 1) setbuf(stdin,NULL);
+    } while (var != 1 || PLAYERS < 2 || PLAYERS > 4);
 
-		switch(menu)
-		{
-		case 1: //Entrar al juego
-            while (menu == 1) {
-                int resultado = 0; //0 => Juego en transcurrencia \\ 1 - 4 => ganó el jugador correspondiente \\ 5 => Se salió de la partida/empate
-                int turn = 0; // turn corresponde al número del jugador respectivo
-                int axis = 0, plano = 0; //Colocar posición y plano de vista
-                //Solicitando datos preliminarios del juego
-                system("cls");
-                printf("------EMPEZANDO JUEGO TAKE THE TOWER----\n\n");
-                do {
-                    printf("De cuantas dimensiones es su tabla? (3-5) ");
-                    var = scanf("%d",&DIMENSION);
-                    if (var != 1) setbuf(stdin,NULL);
-                } while (var != 1 || DIMENSION < 3 || DIMENSION > 5);
+    players = (Player**)malloc(sizeof(Player*)*PLAYERS);
+    for (int i = 0; i < PLAYERS; i++)
+        players[i] = initPlayer(i+'1');
 
-                do {
-                    printf("Cuantos jugadores quieren jugar? (2-4) ");
-                    var = scanf("%d",&PLAYERS);
-                    if (var != 1) setbuf(stdin,NULL);
-                } while (var != 1 || PLAYERS < 2 || PLAYERS > 4);
+    tower = initTower();
 
-                players = (Player**)malloc(sizeof(Player*)*PLAYERS);
-                for (int i = 0; i < PLAYERS; i++)
-                    players[i] = initPlayer(i+'1');
-
-                tower = initTower();
-
-                //Empezando juego (ciclo de juego controlado por el valor de resultado)
-                while (resultado == 0)
-                    menuTower(&resultado,&turn,&menu,&axis,&plano);
-            }
-
-			break;
-		case 2: //Mostrar créditos
-			displayCredits();
-			break;
-        case 0:
-            printf("\nHasta luego!\n");
-		}
-	} while (var != 1 || menu != 0);
+    //Empezando juego (ciclo de juego controlado por el valor de resultado)
+    while (resultado == 0)
+        menuTower(menu,&resultado,&turn,&axis,&plano);
 }
 
-void menuTower(int *resultado,int *turn, int *menu,int *axis, int *plano)
+void menuTower(int *menu,int *resultado,int *turn,int *axis, int *plano)
 {
 	char c;
 
@@ -653,7 +651,6 @@ void displayX(int n)
     free(plane);
 }
 
-
 void displayY(int n)
 {
     // 1. Obtener el plano
@@ -837,16 +834,6 @@ void displayD2(void)
 	freePlane(p);
 }
 
-void displayCredits(void)
-{
-    system("cls");
-	printf("\n(c) 2025.\n"
-           "Victor Emiliano Rodriguez Aguila\n"
-           "& Joshua David DeBono Rios\n\n"
-           "Presiona una tecla para regresar.");
-	enterKey();
-}
-
 void printChar(char c)
 {
     switch (c) {
@@ -856,8 +843,14 @@ void printChar(char c)
         case '2':
             printf("\033[34m2\033[0m"); // imprimir en azul
             break;
+        case '3':
+            printf("\033[38;5;226m3\033[0m");
+            break;
+        case '4':
+            printf("\033[32m4\033[0m");
+            break;
         case '0':
-            printf("*"); // solo un asterizco
+            printf("*"); // solo un asterisco
             break;
 
         case '*':
@@ -925,6 +918,7 @@ void placeMarble(Player *player,int* resultado,int* validTurn)
 {
     Point3D *p = initPoint3D();
     system("cls");
+    printf("-------------------------------- COLOCANDO UNA CANICA --------------------------------\n\n");
 
     for (int i = 0; i < 3; i++) //Input Dialog (se hace 3 veces, para cada nivel de coordenada)
     {
@@ -976,6 +970,7 @@ void ticket(Player* player,int *resultado,int *validTurn)
     int index, direction, var;
 
     system("cls");
+    printf("-------------------------------- GIRANDO LA TABLA --------------------------------\n\n");
     // Pedir al jugador el plano a girar
     do {
         printf("\nDeclara el plano que quieres girar (X fijo, 1-%d, 0 para regresar): ",DIMENSION);
