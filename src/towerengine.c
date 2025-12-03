@@ -1,11 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <pthread.h>
 #include "towerengine.h"
 
 //Funciones inicializadoras
-Plane* initPlane(void)
+Plane* initPlane(int DIMENSION)
 {
     Plane* p = (Plane*)malloc(sizeof(Plane));
     if(!p)
@@ -58,7 +57,7 @@ Player* initPlayer(char id)
 
 
 //Función que inicializa en memoria a la torre
-Tower* initTower(void) {
+Tower* initTower(int DIMENSION) {
     Tower *t = (Tower*)malloc(sizeof(Tower));
     if(!t) {
         printf("No se inicializo adecuadamente la torre\n");
@@ -128,10 +127,10 @@ Point2D* initPoint2D(void)
 //Funciones de mantenimiento
 //--------------------------------
 
-Plane* obtainPlane(int n, int axis)
+Plane* obtainPlane(Tower *t, int n, int axis, int DIMENSION)
 //-------------------------------
 {
-	Plane* plane =  initPlane();
+	Plane* plane =  initPlane(DIMENSION);
 	int x,y,z;
 
 	//Se pasan dos argumentos.
@@ -151,9 +150,9 @@ Plane* obtainPlane(int n, int axis)
 			case D1:
 				x = i; y = j; z = j; break;
 			case D2:
-				x = i; z = j; y = (DIMENSION - 1) - j; break;
+				x = i; y = (DIMENSION - 1) - j; z = j; break;
 			}
-			plane->board2D[i][j] = tower->board3D[x][y][z];
+			plane->board2D[i][j] = t->board3D[x][y][z];
 		}
 	}
 	return plane;
@@ -187,9 +186,9 @@ Point2D* obtainPoint2D(Point3D* p, int axis)
 }
 
 //Crea una copia segura de la torre para hacer validación que el giro es permisible
-Tower* copyTower(Tower* tower)
+Tower* copyTower(Tower* tower, int DIMENSION)
 {
-	Tower* t = initTower();
+	Tower* t = initTower(DIMENSION);
 
 	for(int x=0; x < DIMENSION; x++)
 	{
@@ -207,10 +206,10 @@ Tower* copyTower(Tower* tower)
 //--------------------
 //Funciones de giro
 //---------------------
-Plane* turn90Left(Plane* p)
+Plane* turn90Left(Plane* p, int DIMENSION)
 {
 
-    Plane* ptr = initPlane();
+    Plane* ptr = initPlane(DIMENSION);
 
     if(!ptr) return NULL;
     for(int i=0; i < DIMENSION; ++i)
@@ -221,10 +220,10 @@ Plane* turn90Left(Plane* p)
     return ptr; //Se regresa un 0, en señal de que salio bie
 }
 
-Plane* turn90Right(Plane* p)
+Plane* turn90Right(Plane* p, int DIMENSION)
 {
 
-	Plane* ptr = initPlane();
+	Plane* ptr = initPlane(DIMENSION);
      if(!ptr) return NULL;
 
     //Hacer la rotación
@@ -243,10 +242,10 @@ Plane* turn90Right(Plane* p)
  * vertical o diagonal.
  */
 
-void verifyWin(Point3D *p, int *resultado)
+void verifyWin(Tower* t,Point3D *p, int *resultado, int DIMENSION, int PLAYERS)
 {
 	//Función que checa si ganó el jugador en su turno.
-	//Nos basamos en la lógica de que, siemmpre un punto hace intersección en 3 planos
+	//Nos basamos en la lógica de que, siempre un punto hace intersección en 3 planos
 	Plane* plane;
 	Point2D* p2d;
 
@@ -255,39 +254,42 @@ void verifyWin(Point3D *p, int *resultado)
 		switch(i)
 		{
 		case X:
-			plane = obtainPlane(p->x, X);
+			plane = obtainPlane(t, p->x, X, DIMENSION);
 			p2d = obtainPoint2D(p, X);
 			break;
 
 		case Y:
-			plane = obtainPlane(p->y, Y);
+			plane = obtainPlane(t, p->y, Y, DIMENSION);
 			p2d = obtainPoint2D(p, Y);
 			break;
 
 		case Z:
-			plane = obtainPlane(p->z, Z);
+			plane = obtainPlane(t, p->z, Z, DIMENSION);
 			p2d = obtainPoint2D(p, Z);
 			break;
 		}
 
 		//proceso de validación
-		verifyPlane(plane,resultado,0,p2d->x); //Checar horizontalmente
-		if (*resultado) {free(plane); free(p2d); return;}
-		verifyPlane(plane,resultado,1,p2d->y); //Checar verticalmente
-		if (*resultado) {free(plane); free(p2d); return;}
-		verifyPlane(plane,resultado,2,0); //Checar primera diagonal
-		if (*resultado) {free(plane); free(p2d); return;}
-		verifyPlane(plane,resultado,3,0); //Checar segunda diagonal
-		if (*resultado) {free(plane); free(p2d); return;}
+		verifyPlane(plane,resultado,0,p2d->x, DIMENSION, PLAYERS); //Checar horizontalmente
+		if (*resultado) {freePlane(plane,DIMENSION); free(p2d); return;}
+
+		verifyPlane(plane,resultado,1,p2d->y, DIMENSION, PLAYERS); //Checar verticalmente
+		if (*resultado) {freePlane(plane,DIMENSION); free(p2d); return;}
+
+		verifyPlane(plane,resultado,2,0, DIMENSION, PLAYERS); //Checar primera diagonal
+		if (*resultado) {freePlane(plane,DIMENSION); free(p2d); return;}
+
+		verifyPlane(plane,resultado,3,0, DIMENSION, PLAYERS); //Checar segunda diagonal
+		if (*resultado) {freePlane(plane,DIMENSION); free(p2d); return;}
 
 		//Estar liberando la memoria del plano
-		free(plane);
+		freePlane(plane,DIMENSION);
 		free(p2d);
 	}
 }
 
 //Función que verifica dentro del plano dado
-void verifyPlane(Plane* plane, int *resultado,int line, int n)
+void verifyPlane(Plane* plane, int *resultado,int line, int n, int DIMENSION, int PLAYERS)
 {
 	int playerPoints[4] = {0,0,0,0};
 
@@ -304,9 +306,7 @@ void verifyPlane(Plane* plane, int *resultado,int line, int n)
             if (plane->board2D[x][y] == '1'+i) playerPoints[i]++;
 		}
 	}
-    //mutex
-    //si resultado != 0 parar los hilos y destruirlos
-    //unlock mutex
+
 	for (int i = 0; i < PLAYERS; i++){
         *resultado = (playerPoints[i] == DIMENSION) ? i+1 : 0;
         if (*resultado) break;
@@ -314,32 +314,34 @@ void verifyPlane(Plane* plane, int *resultado,int line, int n)
 }
 
 // Utilizar la función verifyPlane para verificar las diagonales 3D de la torre
-void verifyDiagonals(int axis,int *resultado)
+void verifyDiagonals(Tower* t,int axis,int *resultado, int DIMENSION, int PLAYERS)
 {
-    Plane* plane = obtainPlane(0, axis);
-    verifyPlane(plane,resultado,2,0); //Checar primera diagonal
-	if (*resultado) {free(plane); return;}
-	verifyPlane(plane,resultado,3,0); //Checar segunda diagonal
-	if (*resultado) {free(plane); return;}
+    Plane* plane = obtainPlane(t, 0, axis, DIMENSION);
 
-	free(plane);
+    verifyPlane(plane,resultado,2,0,DIMENSION,PLAYERS); //Checar primera diagonal
+	if (*resultado) {freePlane(plane,DIMENSION); return;}
+
+	verifyPlane(plane,resultado,3,0,DIMENSION,PLAYERS); //Checar segunda diagonal
+	if (*resultado) {freePlane(plane,DIMENSION); return;}
+
+	freePlane(plane, DIMENSION);
 }
 
 //Checa todos los puntos de un plano dado para verificar que no se ha ganado alguien al realizar un giro
-void checkAllTower(Tower* t, Plane* p, int index, int* resultado)
+void checkAllTower(Tower* t, int index, int* resultado, int DIMENSION, int PLAYERS)
 {
 	Point3D* point = initPoint3D(); //Se crea un punto 3D que se va a estar iterando para verificar todo el plano
 	point->x = index; //Se determina el plano
 
-    verifyDiagonals(D1,resultado);
+    verifyDiagonals(t, D1,resultado, DIMENSION, PLAYERS);
     if (*resultado) {free(point); return;}
-    verifyDiagonals(D2,resultado);
+    verifyDiagonals(t, D2,resultado, DIMENSION, PLAYERS);
     if (*resultado) {free(point); return;}
 
     for (point->y = 0; point->y < DIMENSION; ++(point->y)) //Eje y
         for(point->z=0; point->z < DIMENSION; ++(point->z)) //Eje z
         {
-            verifyWin(point, resultado);
+            verifyWin(t, point, resultado, DIMENSION, PLAYERS);
             if(*resultado) {free(point); return;} //Salirse automaticamente si se identificó que alguien va a ganar
         }
 
@@ -348,7 +350,7 @@ void checkAllTower(Tower* t, Plane* p, int index, int* resultado)
 
 //Funciones de liberación de memoria
 //Función que limpia la memoria de la torre
-void freeTower(Tower* t)
+void freeTower(Tower* t, int DIMENSION)
 {
     if(!t) return;  // Si directamente se manda un NULL
 
@@ -366,7 +368,7 @@ void freeTower(Tower* t)
 }
 
 // Función que libera la memoria del plano
-void freePlane(Plane* p)
+void freePlane(Plane* p, int DIMENSION)
 {
     if(!p) return; // si directamente el plano es nulo
 
@@ -380,10 +382,10 @@ void freePlane(Plane* p)
 }
 
 //Limpia la torre y los datos de cada jugador
-void reset(void)
+void reset(Tower* t, Player** p, int DIMENSION, int PLAYERS)
 {
-	freeTower(tower);
+	freeTower(t, DIMENSION);
 	for (int i = 0; i < PLAYERS; i++)
-        free(players[i]);
-    free(players);
+        free(p[i]);
+    free(p);
 }

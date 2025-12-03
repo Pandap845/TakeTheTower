@@ -1,9 +1,6 @@
 #ifndef TOWERENGINE_H_INCLUDED
 #define TOWERENGINE_H_INCLUDED
 
-#include <string.h>
-#include <pthread.h>
-
 #ifdef BUILD_TOWERENGINE_DLL
     // Cuando compilamos la DLL, exportamos las funciones
     #define DLLEXPORT __declspec(dllexport)
@@ -51,40 +48,31 @@ enum AXIS{
 	D2
 };
 
-//Variables globales
-
-#ifndef GLOBAL_VARIABLES
-#define GLOBAL_VARIABLES
-extern int DIMENSION,PLAYERS;
-extern Tower* tower;
-extern Player* players;
-#endif // GLOBAL_VARIABLES
-
 //funciones incializadoras
-DLLEXPORT Tower* initTower(void);
+DLLEXPORT Tower* initTower(int DIMENSION);
 DLLEXPORT Player* initPlayer(char id);
-DLLEXPORT Plane* initPlane(void);
+DLLEXPORT Plane* initPlane(int DIMENSION);
 DLLEXPORT Point3D* initPoint3D(void);
 DLLEXPORT Point2D* initPoint2D(void);
 
 //Funciones de mantenimiento
-DLLEXPORT Tower* copyTower(Tower* tower); //Función que genera una copia temporal de la torre antes de realizar el cambio
-DLLEXPORT Plane* obtainPlane(int n, int axis); //Función que obtiene el plano a analizar
+DLLEXPORT Tower* copyTower(Tower* tower, int DIMENSION); //Función que genera una copia temporal de la torre antes de realizar el cambio
+DLLEXPORT Plane* obtainPlane(Tower* t, int n, int axis, int DIMENSION); //Función que obtiene el plano a analizar
 DLLEXPORT Point2D* obtainPoint2D(Point3D* p, int axis); //Función que transforma un punto 3D a 2D
 
 //Funciones de giro
-DLLEXPORT Plane* turn90Left(Plane* p);
-DLLEXPORT Plane* turn90Right(Plane* p);
+DLLEXPORT Plane* turn90Left(Plane* p, int DIMENSION);
+DLLEXPORT Plane* turn90Right(Plane* p, int DIMENSION);
 
-//funciones de lógica
-DLLEXPORT void verifyWin(Point3D *p, int *resultado); //Función que checa si ganó el jugador en su turno.
-DLLEXPORT void verifyPlane(Plane* plane, int *resultado, int line, int n);
-DLLEXPORT void verifyDiagonals(int axis,int *resultado); //Función que verifica una diagonal de tercera dimensión del tablero
-DLLEXPORT void checkAllTower(Tower* t, Plane* p, int index, int* resultado); //Función que checa todos los planos para validar antes de realizar el giro
+//funciones de validación
+DLLEXPORT void verifyWin(Tower* t,Point3D *p, int *resultado, int DIMENSION, int PLAYERS); //Función que checa si ganó el jugador en su turno.
+DLLEXPORT void verifyPlane(Plane* plane, int *resultado, int line, int n, int DIMENSION, int PLAYERS);
+DLLEXPORT void verifyDiagonals(Tower* t, int axis,int *resultado, int DIMENSION, int PLAYERS); //Función que verifica una diagonal de tercera dimensión del tablero
+DLLEXPORT void checkAllTower(Tower* t, int index, int* resultado, int DIMENSION, int PLAYERS); //Función que checa todos los planos para validar antes de realizar el giro
 
 //Funciones para limpieza de memoria
-DLLEXPORT void freeTower(Tower* t);
-DLLEXPORT void freePlane(Plane* p);
-DLLEXPORT void reset(void);
+DLLEXPORT void freeTower(Tower* t, int DIMENSION);
+DLLEXPORT void freePlane(Plane* p, int DIMENSION);
+DLLEXPORT void reset(Tower* t, Player** players, int DIMENSION, int PLAYERS);
 
 #endif // TOWERENGINE_H_INCLUDED

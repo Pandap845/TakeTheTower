@@ -1,12 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <conio.h>
-#include <pthread.h>
 #include "towerengine.h"
 #include "towerui.h"
 
 //Función que muestra el menú de la torre
-void displayTower(int n,int* axis,int* plano,char* c)
+void displayTower(Tower* t, int n,int* axis,int* plano,char* c, int DIMENSION)
 {
     system("cls");
 	printf("Mostrando plano fijo ");
@@ -27,7 +26,7 @@ void displayTower(int n,int* axis,int* plano,char* c)
 	else
 		printf("\n");
 
-	displayStructure(*plano, *axis);
+	displayStructure(t, *plano, *axis, DIMENSION);
 
 	printf("\nPulse las teclas para realizar:"
 			"\nArriba:    Cambiar eje arriba"
@@ -41,11 +40,11 @@ void displayTower(int n,int* axis,int* plano,char* c)
      printf("\nq:         Salir\n");
 	*c = readKeyboard();
 
-	updateMenu(c,axis,plano);
+	updateMenu(c,axis,plano, DIMENSION);
 }
 
 //FUnción que permite actualizar y recibir las entradas del teclado del usuario
-void updateMenu(char *c, int *axis, int *plano)
+void updateMenu(char *c, int *axis, int *plano, int DIMENSION)
 {
 	switch (*c)
 	{
@@ -68,39 +67,39 @@ void updateMenu(char *c, int *axis, int *plano)
 }
 
 //Función que manda a llamar cada una de los distintos posibles planos
-void displayStructure(int n,  int axis)
+void displayStructure(Tower* t, int n,  int axis, int DIMENSION)
 {
 	switch(axis)
 	{
 	case X:
 	    printf("\nCapas horizontales del cubo. Siendo Plano 1 la parte superior, y Plano 4 la parte inferior.\n");
-		displayX(n); // Para ajustar la vista a lo que se ve, se empieza desde la cara frontal
+		displayX(t, n, DIMENSION); // Para ajustar la vista a lo que se ve, se empieza desde la cara frontal
 		break;
 	case Y: //Muestra con respecto al eje Y
         printf("\nCara lateral derecha del cubo. Donde Plano 1 es la parte frontal, y Plano 4 es la parte trasera.\n");
-		displayY(DIMENSION-n-1);
+		displayY(t, DIMENSION-n-1, DIMENSION);
 		break;
 	case Z: //Con respecto al eje Z
         printf("\nCara lateral izquierda del cubo. Donde Plano 1 es la parte izquierda, y Plano 4 es la parte derecha.\n");
-		displayZ(n);
+		displayZ(t, n, DIMENSION);
 		break;
 	case D1: //Así como las diagonales
 		printf("\nDiagonal principal que cruza la torre\n");
-		displayD1();
+		displayD1(t, DIMENSION);
 		break;
 	case D2:
 		printf("\nAnti-diagonal que cruza la torre\n");
-		displayD2();
+		displayD2(t, DIMENSION);
 		break;
 	}
 }
 //Función que imprime un tablero horizontal
 
-void displayX(int n)
+void displayX(Tower* t, int n, int DIMENSION)
 {
     // 1. Obtener el plano
 
-    Plane* plane = obtainPlane(n, X);
+    Plane* plane = obtainPlane(t, n, X, DIMENSION);
 
     // 2. Mostrarlo en formato "horizontal"
 
@@ -148,14 +147,14 @@ void displayX(int n)
     }
     printChar('\n');
 
-    free(plane);
+    freePlane(plane,DIMENSION);
 }
 
-void displayY(int n)
+void displayY(Tower* t, int n, int DIMENSION)
 {
     // 1. Obtener el plano
 
-    Plane* plane = obtainPlane(n, Y);
+    Plane* plane = obtainPlane(t, n, Y, DIMENSION);
 
     // 2. Mostrarlo en formato "horizontal"
     	//Fila de cobertura de asteriscos
@@ -198,70 +197,70 @@ void displayY(int n)
     }
     printf("\n");
 
-    free(plane);
+    freePlane(plane,DIMENSION);
 }
 
 
 //Función para imprimir torre con Eje X fijo
 
-void displayZ(int n)
+void displayZ(Tower* t, int n, int DIMENSION)
 {
 	 // 1. Obtener el plano
 
-	    Plane* plane = obtainPlane(n, Z);
-	    // 2. Mostrarlo en formato "horizontal"
+    Plane* plane = obtainPlane(t, n, Z, DIMENSION);
+	// 2. Mostrarlo en formato "horizontal"
 
-	    //Final inicial de asteriscos
-	    for (int s = 0; s < DIMENSION + 2; ++s)
+	//Final inicial de asteriscos
+    for (int s = 0; s < DIMENSION + 2; ++s)
+    {
+        printChar('*');
+        printf(" ");
+    }
+    printf("\n");
+
+    for (int i = 0; i < DIMENSION; ++i)
+    {
+        //Espacio en blanco que da efecto de horizontalidad
+
+        for (int s = 0; s < i; ++s)
         {
-	        printChar('*');
-	        printf(" ");
-	    }
-	    printf("\n");
+            printf(" ");
+        }
+        printChar('*');
+        printf(" ");
 
-	    for (int i = 0; i < DIMENSION; ++i)
-	    {
-	        //Espacio en blanco que da efecto de horizontalidad
+        // imprimir cada columna
+        for (int j = 0; j < DIMENSION; ++j)
+        {
+            printChar(plane->board2D[i][j]);
+            printf(" ");
+        }
 
-	    	for (int s = 0; s < i; ++s)
-	        {
-	    		printf(" ");
-	        }
-	    	printChar('*');
-	    	printf(" ");
+        // terminar la fila con '*'
+        printChar('*');
+        printChar('\n');
+    }
 
-	        // imprimir cada columna
-	        for (int j = 0; j < DIMENSION; ++j)
-	        {
-	            printChar(plane->board2D[i][j]);
-	            printf(" ");
-	        }
+    // fila final de asteriscos
+    for (int s = 0; s < DIMENSION - 2; ++s)
+    {
+        printChar(' ');
+        printChar(' ');
+    }
+    for (int j = 0; j < DIMENSION + 2; ++j)
+    {
+        printChar('*');
+        printChar(' ');
+    }
+    printChar('\n');
 
-	        // terminar la fila con '*'
-	        printChar('*');
-	        printChar('\n');
-	    }
-
-	    // fila final de asteriscos
-	    for (int s = 0; s < DIMENSION - 2; ++s)
-	    {
-	        printChar(' ');
-	        printChar(' ');
-	    }
-	    for (int j = 0; j < DIMENSION + 2; ++j)
-	    {
-	        printChar('*');
-	        printChar(' ');
-	    }
-	    printChar('\n');
-
-	    free(plane);
+    freePlane(plane,DIMENSION);
 }
 
 //Función que muestra la primera diagonal
-void displayD1(void)
+void displayD1(Tower* t, int DIMENSION)
 {
-	Plane* p = obtainPlane(0, D1);
+	Plane* p = obtainPlane(t, 0, D1, DIMENSION);
 
 	for(int i=0; i < DIMENSION+2; ++i)
 	{
@@ -291,14 +290,14 @@ void displayD1(void)
 		}
 		printf("\n");
 
-	freePlane(p);
+	freePlane(p, DIMENSION);
 }
 
 //Función que muestra la segunda diagonal
-void displayD2(void)
+void displayD2(Tower* t, int DIMENSION)
 {
 
-	Plane* p = obtainPlane(0, D2);
+	Plane* p = obtainPlane(t, 0, D2, DIMENSION);
 
 
 	for(int i=0; i < DIMENSION+2; ++i)
@@ -331,8 +330,11 @@ void displayD2(void)
 
 
 
-	freePlane(p);
+	freePlane(p, DIMENSION);
 }
+
+//-------------------------
+//Fúnciones auxiliares
 
 void printChar(char c)
 {
@@ -344,10 +346,10 @@ void printChar(char c)
             printf("\033[34m2\033[0m"); // imprimir en azul
             break;
         case '3':
-            printf("\033[38;5;226m3\033[0m");
+            printf("\033[38;5;226m3\033[0m"); //Imprimir en
             break;
         case '4':
-            printf("\033[32m4\033[0m");
+            printf("\033[32m4\033[0m"); //Imprimir en
             break;
         case '0':
             printf("*"); // solo un asterisco
@@ -361,4 +363,37 @@ void printChar(char c)
             printf("%c", c);
             break;
     }
+}
+
+//Traduce pulsos de tecla a valores interpretables por el UI
+char readKeyboard(void)
+{
+	int c;
+
+	while (1)
+	{
+		c = _getch();
+		if (c == 0 || c == 224) {   // teclas especiales
+			c = _getch();
+			switch (c) {
+			case 72: return 'u';
+			case 80: return 'd';
+			case 75: return 'l';
+			case 77: return 'r';
+			}
+		} else if (c == 'q') {
+			return 'q';
+		} else if (c == 'e')
+			return 'e';
+	}
+
+	return 0;
+
+}
+
+//Limpia el buffer y hace que se presione una tecla para continuar
+void enterKey(void)
+{
+    setbuf(stdin,NULL);
+	getchar();
 }
