@@ -1,0 +1,5 @@
+gcc -D BUILD_TOWERENGINE_DLL -c towerengine.c -o towerengine.o
+gcc -shared -o towerengine.dll towerengine.o -Wl,--out-implib,libtowerngine.dll.a
+gcc -D BUILD_TOWERUI_DLL -c towerui.c -o towerui.o
+gcc -shared -o towerui.dll towerui.o -L. -ltowerengine
+gcc DED_Proyecto2.c -o DED_Proyecto2.exe -L. -ltowerui -ltowerengine
