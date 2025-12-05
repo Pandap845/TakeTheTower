@@ -335,8 +335,8 @@ void ticket(Player* player,int *resultado,int *validTurn)
 
     if (direction == 0) return;
 
-    // Crear copia de la torre como respaldo
-    Tower* backup = copyTower(tower, DIMENSION);
+    //Ya no se ocupa hacer copia
+   // Tower* backup = copyTower(tower, DIMENSION);
 
     // Obtener el plano fijo en el eje e índice solicitado
     Plane* plane = obtainPlane(tower,index-1, axis-'X',DIMENSION);
@@ -359,7 +359,13 @@ void ticket(Player* player,int *resultado,int *validTurn)
     // Verificar si alguien ganó tras el giro
     checkAllTower(tower, index-1, resultado, DIMENSION, PLAYERS);
 
-    if (!(*resultado)) { //Verifica si el giro fue valido
+    //Directamente tomamos cualquier movimiento como ganador
+    *validTurn = 1;
+    player->ticket -=1;
+    printf("\nEl plano fue girado con exito! Presiona una tecla para continuar.\n");
+    enterKey();
+
+    /*if (!(*resultado)) { //Verifica si el giro fue valido
         *validTurn = 1;
         player->ticket -= 1;
         printf("\nEl plano fue girado con exito! Presiona una tecla para continuar.\n");
@@ -373,10 +379,10 @@ void ticket(Player* player,int *resultado,int *validTurn)
         *resultado = 0;
         printf("\nMovimiento invalido: alguien ganaria con este giro. Presiona una tecla e intenta de nuevo.\n");
         enterKey();
-    }
+    }*/
 
     // Liberar memoria
     freePlane(plane, DIMENSION);
     freePlane(rotated, DIMENSION);
-    freeTower(backup, DIMENSION);
+    //freeTower(backup, DIMENSION);
 }
